@@ -86,3 +86,15 @@ model Match {
 
   @@unique([roundId, courtNumber])
 }
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+model LoginCode {
+  id        String   @id @default(cuid())
+  label     String
+  codeHash  String
+  createdAt DateTime @default(now())
+}

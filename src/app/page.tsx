@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { DeleteSessionButton } from "./DeleteSessionButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +25,23 @@ export default async function HomePage() {
           <span className="material-symbols-outlined text-3xl text-ink">sports_tennis</span>
           <h1 className="font-heading text-2xl font-black tracking-tight text-ink">PSK Padel</h1>
         </div>
-        <Link
-          href="/session/new"
-          className="flex items-center gap-1 rounded-xl bg-lime px-4 py-2 text-sm font-black text-on-lime active:scale-95 transition-transform"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          New
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/schedule"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-outline text-ink-muted"
+            aria-label="Plan & share schedule"
+          >
+            <span className="material-symbols-outlined text-lg">share</span>
+          </Link>
+          <Link
+            href="/session/new"
+            className="flex items-center gap-1 rounded-xl bg-lime px-4 py-2 text-sm font-black text-on-lime active:scale-95 transition-transform"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            New
+          </Link>
+        </div>
       </header>
 
       <section className="mb-6">

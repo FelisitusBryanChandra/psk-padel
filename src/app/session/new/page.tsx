@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -14,6 +14,20 @@ export default function NewSessionPage() {
   const [players, setPlayers] = useState<string[]>(["", "", "", ""]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("psk_import");
+    if (!raw) return;
+    sessionStorage.removeItem("psk_import");
+    try {
+      const imported = JSON.parse(raw) as { name: string; date: string; players: string[] };
+      setName(imported.name);
+      setDate(imported.date);
+      setPlayers(imported.players.length ? imported.players : ["", "", "", ""]);
+    } catch {
+      // ignore malformed import data
+    }
+  }, []);
 
   function updatePlayer(idx: number, value: string) {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? value : p)));
@@ -173,16 +187,16 @@ export default function NewSessionPage() {
                 </button>
               </div>
             ))}
+            <button
+              type="button"
+              onClick={addPlayer}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline py-4 text-sm font-bold text-ink-muted transition-colors active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined">add_circle</span>
+              Add player
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={addPlayer}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline py-4 text-sm font-bold text-ink-muted transition-colors active:scale-[0.98]"
-          >
-            <span className="material-symbols-outlined">add_circle</span>
-            Add player
-          </button>
-          </div>
+        </div>
 
           {error && <p className="text-sm text-live">{error}</p>}
         </div>

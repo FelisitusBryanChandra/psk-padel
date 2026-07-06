@@ -2,32 +2,44 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ConfirmModal } from "./ConfirmModal";
 
 export function DeleteSessionButton({ sessionId, name }: { sessionId: string; name: string }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  async function handleDelete(e: React.MouseEvent) {
+  function openConfirm(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    setConfirming(true);
+  }
 
-    if (!confirm(`Delete "${name}"? This removes all its rounds and scores permanently.`)) {
-      return;
-    }
-
+  async function handleDelete() {
+    setConfirming(false);
     setDeleting(true);
     await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
     router.refresh();
   }
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={deleting}
-      aria-label="Delete session"
-      className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-live-bg/20 hover:text-live disabled:opacity-40"
-    >
-      <span className="material-symbols-outlined text-lg">delete</span>
-    </button>
+    <>
+      <button
+        onClick={openConfirm}
+        disabled={deleting}
+        aria-label="Delete session"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-live-bg/20 hover:text-live disabled:opacity-40"
+      >
+        <span className="material-symbols-outlined text-lg">delete</span>
+      </button>
+      <ConfirmModal
+        open={confirming}
+        title="Delete session?"
+        message={`Delete "${name}"? This removes all its rounds and scores permanently.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirming(false)}
+      />
+    </>
   );
 }

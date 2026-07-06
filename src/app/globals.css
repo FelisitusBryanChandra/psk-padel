@@ -26,6 +26,20 @@
   --font-body: var(--font-body), sans-serif;
 }
 
+/* Light mode overrides the same tokens the dark @theme block defines above;
+   toggling the `light` class on <html> is all ThemeToggle needs to do. */
+.light {
+  --color-bg: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-surface-low: #f3f4f5;
+  --color-surface-high: #e7e8e9;
+  --color-surface-highest: #e1e3e4;
+
+  --color-ink: #191c1d;
+  --color-ink-muted: #5d5e61;
+  --color-outline: #dde2e5;
+}
+
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
@@ -40,4 +54,16 @@
 ::-webkit-scrollbar-thumb {
   background: var(--color-outline);
   border-radius: 10px;
+}
+
+/* Rotates the Scoreboard screen into landscape on portrait phones/tablets. */
+@media (max-width: 900px) and (orientation: portrait) {
+  .landscape-force {
+    position: fixed;
+    inset: 0;
+    width: 100vh;
+    height: 100vw;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100%);
+  }
 }
