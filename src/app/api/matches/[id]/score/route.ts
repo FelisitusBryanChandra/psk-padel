@@ -4,10 +4,23 @@ import { nextServeState } from "@/lib/serve";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { team, delta } = (await req.json()) as { team: 1 | 2; delta: 1 | -1 };
+  const { team, delta, value } = (await req.json()) as {
+    team: 1 | 2;
+    delta?: 1 | -1;
+    value?: number;
+  };
 
-  if ((team !== 1 && team !== 2) || (delta !== 1 && delta !== -1)) {
-    return NextResponse.json({ error: "Invalid team or delta" }, { status: 400 });
+  if (team !== 1 && team !== 2) {
+    return NextResponse.json({ error: "Invalid team" }, { status: 400 });
+  }
+  if (delta === undefined && value === undefined) {
+    return NextResponse.json({ error: "Provide delta or value" }, { status: 400 });
+  }
+  if (delta !== undefined && delta !== 1 && delta !== -1) {
+    return NextResponse.json({ error: "Invalid delta" }, { status: 400 });
+  }
+  if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+    return NextResponse.json({ error: "Invalid value" }, { status: 400 });
   }
 
   const match = await prisma.match.findUnique({
@@ -21,19 +34,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const scoreField = team === 1 ? "team1Score" : "team2Score";
-  if (match[scoreField] + delta < 0) {
-    return NextResponse.json(match);
+  const prevValue = match[scoreField];
+
+  let updated;
+  if (value !== undefined) {
+    updated = await prisma.match.update({ where: { id }, data: { [scoreField]: value } });
+  } else {
+    if (prevValue + delta! < 0) {
+      return NextResponse.json(match);
+    }
+    // Atomic increment so a concurrent tap from a second device never loses
+    // a point, even if the serve calculation below races slightly.
+    updated = await prisma.match.update({
+      where: { id },
+      data: { [scoreField]: { increment: delta } },
+    });
   }
 
-  // Atomic increment first so a concurrent tap from a second device never
-  // loses a point, even if the serve calculation below races slightly.
-  const updated = await prisma.match.update({
-    where: { id },
-    data: { [scoreField]: { increment: delta } },
-  });
-
+  const appliedChange = updated[scoreField] - prevValue;
   const newTotal = updated.team1Score + updated.team2Score;
-  const prevTotal = newTotal - delta;
+  const prevTotal = newTotal - appliedChange;
   const serve = nextServeState(updated, prevTotal, newTotal, match.round.session.pointsPerServe);
 
   const final = await prisma.match.update({ where: { id }, data: serve });

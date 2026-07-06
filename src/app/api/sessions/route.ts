@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateNextRound } from "@/lib/rotation";
 
 export async function GET() {
   const sessions = await prisma.session.findMany({
@@ -64,6 +65,15 @@ export async function POST(req: NextRequest) {
 
     return created;
   });
+
+  // Auto-generate the standard round-robin length (players - 1) so everyone
+  // partners with everyone once, matching how Americano/AYO seed a session.
+  // Sit-outs within each round are still balanced by the rotation algorithm
+  // when there aren't enough courts for everyone to play every round.
+  const initialRounds = cleanNames.length - 1;
+  for (let i = 0; i < initialRounds; i++) {
+    await generateNextRound(session.id);
+  }
 
   return NextResponse.json(session, { status: 201 });
 }

@@ -65,6 +65,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     .at(-1)
     ?.matches.some((m) => !m.completed);
 
+  const hasIncomplete = session?.rounds.some((r) => r.matches.some((m) => !m.completed));
+
   const refresh = useCallback(async () => {
     const [sRes, stRes] = await Promise.all([
       fetch(`/api/sessions/${id}`),
@@ -92,6 +94,15 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     refresh();
   }
 
+  async function setScore(matchId: string, team: 1 | 2, value: number) {
+    await fetch(`/api/matches/${matchId}/score`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ team, value }),
+    });
+    refresh();
+  }
+
   async function switchServe(matchId: string) {
     await fetch(`/api/matches/${matchId}/serve`, { method: "POST" });
     refresh();
@@ -110,6 +121,18 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     refresh();
   }
 
+  async function endSession() {
+    if (
+      !confirm(
+        "End this session? Any match still in progress gets locked in at its current score, and rounds that never started are removed."
+      )
+    ) {
+      return;
+    }
+    await fetch(`/api/sessions/${id}/end`, { method: "POST" });
+    refresh();
+  }
+
   if (!session) {
     return (
       <main className="flex flex-1 items-center justify-center bg-bg text-ink-muted">
@@ -125,7 +148,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <Link href="/" className="material-symbols-outlined text-ink">
             arrow_back
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="font-heading text-lg font-black text-ink">{session.name}</h1>
             <p className="text-xs text-ink-muted">
               {session.players.length} players &middot; {session.courts} court
@@ -133,6 +156,14 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               {session.pointsPerServe}
             </p>
           </div>
+          {hasIncomplete && (
+            <button
+              onClick={endSession}
+              className="whitespace-nowrap rounded-full border border-outline px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-ink-muted"
+            >
+              End Session
+            </button>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-b border-outline/30 pb-2">
@@ -242,12 +273,14 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                               score={m.team1Score}
                               disabled={m.completed}
                               onChange={(d) => adjustScore(m.id, 1, d)}
+                              onSet={(v) => setScore(m.id, 1, v)}
                             />
                             <ScoreControl
                               label="Team 2"
                               score={m.team2Score}
                               disabled={m.completed}
                               onChange={(d) => adjustScore(m.id, 2, d)}
+                              onSet={(v) => setScore(m.id, 2, v)}
                             />
                           </div>
 
@@ -281,7 +314,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               add_circle
             </span>
             <span className="font-heading text-sm font-bold uppercase tracking-widest text-ink-muted group-active:text-lime">
-              {generating ? "Generating..." : "Generate Next Round"}
+              {generating ? "Adding..." : "Add More Matches"}
             </span>
           </button>
         </div>
@@ -320,18 +353,55 @@ function ScoreControl({
   score,
   disabled,
   onChange,
+  onSet,
 }: {
   label: string;
   score: number;
   disabled: boolean;
   onChange: (delta: 1 | -1) => void;
+  onSet: (value: number) => void;
 }) {
+  const [text, setText] = useState(String(score));
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) setText(String(score));
+  }, [score, focused]);
+
+  function commit() {
+    const parsed = parseInt(text, 10);
+    if (Number.isInteger(parsed) && parsed >= 0 && parsed !== score) {
+      onSet(parsed);
+    } else {
+      setText(String(score));
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-2 rounded-xl border border-outline/20 bg-surface-low p-4">
       <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
         {label}
       </span>
-      <span className="font-heading text-5xl font-black tabular-nums text-lime">{score}</span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={0}
+        value={text}
+        disabled={disabled}
+        onFocus={(e) => {
+          setFocused(true);
+          e.target.select();
+        }}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          setFocused(false);
+          commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="w-24 bg-transparent text-center font-heading text-5xl font-black tabular-nums text-lime outline-none disabled:opacity-60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
       <div className="mt-1 flex gap-4">
         <button
           disabled={disabled}

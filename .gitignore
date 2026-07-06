@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+.vercel
+.env*
+
+# unused logo mockup exports (not wired into the app)
+/Image/

@@ -12,13 +12,24 @@ function flipSlot(state: ServeState, team: number): ServeState {
     : { ...state, team2ServerSlot: other(state.team2ServerSlot) };
 }
 
+function flipOnce(state: ServeState, forward: boolean): ServeState {
+  if (forward) {
+    const flipped = flipSlot(state, state.servingTeam);
+    return { ...flipped, servingTeam: other(state.servingTeam) };
+  }
+  const nextTeam = other(state.servingTeam);
+  return flipSlot({ ...state, servingTeam: nextTeam }, nextTeam);
+}
+
 /**
- * Auto-rotation triggered by a single +1/-1 point tap. A block of
- * `pointsPerServe` points is always served by the same player; when the
- * combined total crosses a multiple of it, serve hands to the other team
- * and the team that just finished serving remembers to alternate partners
- * next time its turn comes back around. Undoing a point (-1) reverses the
- * same handoff symmetrically.
+ * Auto-rotation triggered by a point change (+1/-1 tap, or a direct score
+ * edit that jumps by more than one point). A block of `pointsPerServe`
+ * points is always served by the same player; every time the combined
+ * total crosses a multiple of it, serve hands to the other team and the
+ * team that just finished serving remembers to alternate partners next
+ * time its turn comes back around. A jump that crosses several boundaries
+ * at once (e.g. typing a score directly) replays each handoff in order;
+ * a decrease reverses them the same way, one boundary at a time.
  */
 export function nextServeState(
   state: ServeState,
@@ -26,19 +37,17 @@ export function nextServeState(
   newTotal: number,
   pointsPerServe: number
 ): ServeState {
-  if (pointsPerServe <= 0) return state;
+  if (pointsPerServe <= 0 || newTotal === prevTotal) return state;
 
-  if (newTotal > prevTotal && newTotal % pointsPerServe === 0) {
-    const flipped = flipSlot(state, state.servingTeam);
-    return { ...flipped, servingTeam: other(state.servingTeam) };
+  const prevBlocks = Math.floor(prevTotal / pointsPerServe);
+  const newBlocks = Math.floor(newTotal / pointsPerServe);
+  const steps = newBlocks - prevBlocks;
+
+  let next = state;
+  for (let i = 0; i < Math.abs(steps); i++) {
+    next = flipOnce(next, steps > 0);
   }
-
-  if (newTotal < prevTotal && prevTotal > 0 && prevTotal % pointsPerServe === 0) {
-    const nextTeam = other(state.servingTeam);
-    return flipSlot({ ...state, servingTeam: nextTeam }, nextTeam);
-  }
-
-  return state;
+  return next;
 }
 
 const SERVE_ORDER = [

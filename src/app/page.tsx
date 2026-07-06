@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { DeleteSessionButton } from "./DeleteSessionButton";
 
 export const dynamic = "force-dynamic";
 
@@ -76,56 +77,67 @@ export default async function HomePage() {
               const status = allMatches.length === 0 ? null : isLive ? "LIVE" : "COMPLETED";
 
               return (
-                <Link
+                <div
                   key={s.id}
-                  href={`/session/${s.id}`}
-                  className="rounded-xl border border-outline bg-surface/70 p-4 backdrop-blur-md transition-colors active:scale-[0.98]"
+                  className="relative rounded-xl border border-outline bg-surface/70 p-4 backdrop-blur-md transition-colors active:scale-[0.98]"
                 >
-                  <div className="mb-3 flex items-start justify-between">
-                    <div>
-                      {status && (
-                        <div className="mb-1 flex items-center gap-2">
-                          {status === "LIVE" && (
-                            <span className="h-2 w-2 rounded-full bg-live animate-pulse" />
-                          )}
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-widest ${
-                              status === "LIVE" ? "text-live" : "text-ink-muted"
-                            }`}
-                          >
-                            {status}
-                          </span>
+                  <Link href={`/session/${s.id}`} className="absolute inset-0" aria-label={s.name} />
+                  <div className="pointer-events-none relative">
+                    <div className="mb-3 flex items-start justify-between">
+                      <div>
+                        {status && (
+                          <div className="mb-1 flex items-center gap-2">
+                            {status === "LIVE" && (
+                              <span className="h-2 w-2 rounded-full bg-live animate-pulse" />
+                            )}
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-widest ${
+                                status === "LIVE" ? "text-live" : "text-ink-muted"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        )}
+                        <h4 className="font-heading text-lg font-bold text-ink">{s.name}</h4>
+                        <div className="mt-1 flex items-center gap-1 text-sm text-ink-muted">
+                          <span className="material-symbols-outlined text-sm">calendar_today</span>
+                          {s.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </div>
-                      )}
-                      <h4 className="font-heading text-lg font-bold text-ink">{s.name}</h4>
-                      <div className="mt-1 flex items-center gap-1 text-sm text-ink-muted">
-                        <span className="material-symbols-outlined text-sm">calendar_today</span>
-                        {s.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </div>
+                      <div className="pointer-events-auto flex items-center gap-1">
+                        <DeleteSessionButton sessionId={s.id} name={s.name} />
+                        <span className="material-symbols-outlined text-ink-muted">
+                          chevron_right
+                        </span>
                       </div>
                     </div>
-                    <span className="material-symbols-outlined text-ink-muted">chevron_right</span>
+                    <div className="grid grid-cols-3 gap-2 border-t border-outline/30 pt-3">
+                      <div className="rounded-lg bg-surface-high p-2 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                          Players
+                        </p>
+                        <p className="font-heading text-lg font-bold text-ink">
+                          {s.players.length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-surface-high p-2 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                          Courts
+                        </p>
+                        <p className="font-heading text-lg font-bold text-ink">{s.courts}</p>
+                      </div>
+                      <div className="rounded-lg bg-surface-high p-2 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                          Rounds
+                        </p>
+                        <p className="font-heading text-lg font-bold text-ink">
+                          {s.rounds.length}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 border-t border-outline/30 pt-3">
-                    <div className="rounded-lg bg-surface-high p-2 text-center">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                        Players
-                      </p>
-                      <p className="font-heading text-lg font-bold text-ink">{s.players.length}</p>
-                    </div>
-                    <div className="rounded-lg bg-surface-high p-2 text-center">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                        Courts
-                      </p>
-                      <p className="font-heading text-lg font-bold text-ink">{s.courts}</p>
-                    </div>
-                    <div className="rounded-lg bg-surface-high p-2 text-center">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                        Rounds
-                      </p>
-                      <p className="font-heading text-lg font-bold text-ink">{s.rounds.length}</p>
-                    </div>
-                  </div>
-                </Link>
+                </div>
               );
             })}
           </div>
