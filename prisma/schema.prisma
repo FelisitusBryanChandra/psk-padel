@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  sessionPlayers  SessionPlayer[]
+  team1Player1Of  Match[]         @relation("Team1Player1")
+  team1Player2Of  Match[]         @relation("Team1Player2")
+  team2Player1Of  Match[]         @relation("Team2Player1")
+  team2Player2Of  Match[]         @relation("Team2Player2")
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  name           String
+  date           DateTime
+  courts         Int
+  pointsPerMatch Int      @default(21)
+  pointsPerServe Int      @default(5)
+  createdAt      DateTime @default(now())
+
+  players SessionPlayer[]
+  rounds  Round[]
+}
+
+model SessionPlayer {
+  id        String @id @default(cuid())
+  sessionId String
+  playerId  String
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player  Player  @relation(fields: [playerId], references: [id])
+
+  @@unique([sessionId, playerId])
+}
+
+model Round {
+  id          String @id @default(cuid())
+  sessionId   String
+  roundNumber Int
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  matches Match[]
+
+  @@unique([sessionId, roundNumber])
+}
+
+model Match {
+  id          String @id @default(cuid())
+  roundId     String
+  courtNumber Int
+
+  team1Player1Id String
+  team1Player2Id String
+  team2Player1Id String
+  team2Player2Id String
+
+  team1Score Int @default(0)
+  team2Score Int @default(0)
+
+  completed Boolean @default(false)
+
+  // Serve tracking: which team serves now, and which of that team's
+  // two players serves next time it's that team's turn (see servingPlayerId()).
+  servingTeam     Int @default(1)
+  team1ServerSlot Int @default(1)
+  team2ServerSlot Int @default(1)
+
+  round        Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  team1Player1 Player @relation("Team1Player1", fields: [team1Player1Id], references: [id])
+  team1Player2 Player @relation("Team1Player2", fields: [team1Player2Id], references: [id])
+  team2Player1 Player @relation("Team2Player1", fields: [team2Player1Id], references: [id])
+  team2Player2 Player @relation("Team2Player2", fields: [team2Player2Id], references: [id])
+
+  @@unique([roundId, courtNumber])
+}
