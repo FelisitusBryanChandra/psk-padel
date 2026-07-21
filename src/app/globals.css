@@ -141,6 +141,20 @@
   transform: translate3d(25%, 0, 0);
 }
 
+/* Opt-in variant for a plain on/off toggle (as opposed to a two-named-state
+   picker like the sort-order switch above, which already carries its state
+   via the flanking label text) — the indicator itself needs to carry the
+   on/off meaning since there's no label pair around it to do that instead. */
+.sort-toggle-stateful .sort-toggle-indicator {
+  background: var(--color-outline);
+  transition:
+    transform 0.4s cubic-bezier(0.85, 0.05, 0.18, 1.35),
+    background-color 0.3s ease;
+}
+.sort-toggle-stateful .sort-toggle-input:checked ~ .sort-toggle-indicator {
+  background: var(--color-lime);
+}
+
 /* Pill button with a shimmering border and a springy hover scale (adapted
    from https://uiverse.io/LilaRest/loud-walrus-26, MIT-licensed) —
    retextured with lime/surface color-mix instead of the original's

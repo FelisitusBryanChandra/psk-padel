@@ -178,7 +178,7 @@ export default function NewSessionPage() {
               Lets you bump the court count mid-session as more courts free up.
             </span>
           </span>
-          <span className="sort-toggle">
+          <span className="sort-toggle sort-toggle-stateful">
             <input
               type="checkbox"
               className="sort-toggle-input"
