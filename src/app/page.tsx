@@ -122,6 +122,9 @@ export default async function HomePage() {
                         )}
                         <div className="flex items-center gap-2">
                           <h4 className="font-heading text-lg font-bold text-ink">{s.name}</h4>
+                          <span className="rounded-full bg-surface-highest px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-lime-dim">
+                            {s.sessionType}
+                          </span>
                           {isAdmin && s.community && (
                             <span className="rounded-full bg-surface-highest px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
                               #{s.community.code}

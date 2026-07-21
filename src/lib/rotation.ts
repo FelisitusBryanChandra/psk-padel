@@ -65,8 +65,40 @@ type HistoryRound = {
     team1Player2Id: string;
     team2Player1Id: string;
     team2Player2Id: string;
+    team1Score: number;
+    team2Score: number;
+    completed: boolean;
   }[];
 };
+
+function computeGamesPlayed(playerIds: string[], history: HistoryRound[]): Map<string, number> {
+  const gamesPlayed = new Map<string, number>(playerIds.map((id) => [id, 0]));
+  for (const round of history) {
+    for (const m of round.matches) {
+      const slots = [m.team1Player1Id, m.team1Player2Id, m.team2Player1Id, m.team2Player2Id];
+      for (const id of slots) {
+        gamesPlayed.set(id, (gamesPlayed.get(id) ?? 0) + 1);
+      }
+    }
+  }
+  return gamesPlayed;
+}
+
+function computePointsSoFar(playerIds: string[], history: HistoryRound[]): Map<string, number> {
+  const points = new Map<string, number>(playerIds.map((id) => [id, 0]));
+  for (const round of history) {
+    for (const m of round.matches) {
+      if (!m.completed) continue;
+      for (const id of [m.team1Player1Id, m.team1Player2Id]) {
+        points.set(id, (points.get(id) ?? 0) + m.team1Score);
+      }
+      for (const id of [m.team2Player1Id, m.team2Player2Id]) {
+        points.set(id, (points.get(id) ?? 0) + m.team2Score);
+      }
+    }
+  }
+  return points;
+}
 
 /**
  * Pure scheduling core (no DB): picks who sits out and who partners whom
@@ -88,15 +120,11 @@ type HistoryRound = {
  * players / 2 courts).
  */
 export function planNextRound(playerIds: string[], courts: number, history: HistoryRound[]) {
-  const gamesPlayed = new Map<string, number>(playerIds.map((id) => [id, 0]));
+  const gamesPlayed = computeGamesPlayed(playerIds, history);
   const partnerCount = new Map<string, number>();
 
   for (const round of history) {
     for (const m of round.matches) {
-      const slots = [m.team1Player1Id, m.team1Player2Id, m.team2Player1Id, m.team2Player2Id];
-      for (const id of slots) {
-        gamesPlayed.set(id, (gamesPlayed.get(id) ?? 0) + 1);
-      }
       const k1 = pairKey(m.team1Player1Id, m.team1Player2Id);
       const k2 = pairKey(m.team2Player1Id, m.team2Player2Id);
       partnerCount.set(k1, (partnerCount.get(k1) ?? 0) + 1);
@@ -118,17 +146,89 @@ export function planNextRound(playerIds: string[], courts: number, history: Hist
   return best.groups;
 }
 
+/**
+ * Mexicano scheduling core. Unlike Americano, pairing isn't about avoiding
+ * repeat partners — it's rank-based, to keep matches close: round 1 (no
+ * scores yet) shuffles like Americano does, but every round after that
+ * ranks the playing group by points scored so far and, within each block of
+ * four, pairs rank 1 with rank 4 against rank 2 with rank 3 (the standard
+ * Mexicano rule — keeps a strong/weak pairing on each side of the net
+ * instead of stacking the two strongest together).
+ *
+ * Fixed partnerships skip individual pairing entirely: a `[playerId,
+ * playerId]` tuple is a locked team, so fairness and ranking both operate
+ * on whole teams (a team can't be split — either both partners sit out or
+ * both play), and each round just decides which team plays which other
+ * team.
+ */
+export function planNextMexicanoRound(
+  playerIds: string[],
+  courts: number,
+  history: HistoryRound[],
+  fixedPartnerships: [string, string][] = []
+) {
+  const gamesPlayed = computeGamesPlayed(playerIds, history);
+  const points = computePointsSoFar(playerIds, history);
+  const hasResults = history.some((round) => round.matches.some((m) => m.completed));
+
+  if (fixedPartnerships.length > 0) {
+    const capacityTeams = courts * 2;
+    const rankedTeams = shuffle(fixedPartnerships).sort(
+      (a, b) => (gamesPlayed.get(a[0]) ?? 0) - (gamesPlayed.get(b[0]) ?? 0)
+    );
+    const playingTeams = rankedTeams.slice(0, Math.min(capacityTeams, rankedTeams.length));
+
+    const ordered = hasResults
+      ? [...playingTeams].sort((a, b) => (points.get(b[0]) ?? 0) - (points.get(a[0]) ?? 0))
+      : shuffle(playingTeams);
+
+    const groups: string[][] = [];
+    for (let i = 0; i + 1 < ordered.length; i += 2) {
+      groups.push([...ordered[i], ...ordered[i + 1]]);
+    }
+    return groups;
+  }
+
+  const capacity = courts * 4;
+  const ranked = shuffle(playerIds).sort(
+    (a, b) => (gamesPlayed.get(a) ?? 0) - (gamesPlayed.get(b) ?? 0)
+  );
+  const playing = ranked.slice(0, Math.min(capacity, ranked.length));
+
+  const ordered = hasResults
+    ? [...playing].sort((a, b) => (points.get(b) ?? 0) - (points.get(a) ?? 0))
+    : shuffle(playing);
+
+  const groups: string[][] = [];
+  for (let i = 0; i + 4 <= ordered.length; i += 4) {
+    const [rank1, rank2, rank3, rank4] = ordered.slice(i, i + 4);
+    groups.push([rank1, rank4, rank2, rank3]);
+  }
+  return groups;
+}
+
 export async function generateNextRound(sessionId: string) {
   const session = await prisma.session.findUniqueOrThrow({
     where: { id: sessionId },
     include: {
       players: { include: { player: true } },
       rounds: { include: { matches: true }, orderBy: { roundNumber: "asc" } },
+      fixedPartnerships: true,
     },
   });
 
   const playerIds = session.players.map((sp) => sp.playerId);
-  const groups = planNextRound(playerIds, session.courts, session.rounds);
+  const groups =
+    session.sessionType === "MEXICANO"
+      ? planNextMexicanoRound(
+          playerIds,
+          session.courts,
+          session.rounds,
+          session.fixedPartners
+            ? session.fixedPartnerships.map((p): [string, string] => [p.player1Id, p.player2Id])
+            : []
+        )
+      : planNextRound(playerIds, session.courts, session.rounds);
 
   const nextRoundNumber = (session.rounds.at(-1)?.roundNumber ?? 0) + 1;
 

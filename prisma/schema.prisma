@@ -15,15 +15,18 @@ model Player {
   name      String
   createdAt DateTime @default(now())
 
-  sessionPlayers  SessionPlayer[]
-  team1Player1Of  Match[]         @relation("Team1Player1")
-  team1Player2Of  Match[]         @relation("Team1Player2")
-  team2Player1Of  Match[]         @relation("Team2Player1")
-  team2Player2Of  Match[]         @relation("Team2Player2")
+  sessionPlayers     SessionPlayer[]
+  team1Player1Of     Match[]            @relation("Team1Player1")
+  team1Player2Of     Match[]            @relation("Team1Player2")
+  team2Player1Of     Match[]            @relation("Team2Player1")
+  team2Player2Of     Match[]            @relation("Team2Player2")
+  fixedPartner1Of    FixedPartnership[] @relation("FixedPartner1")
+  fixedPartner2Of    FixedPartnership[] @relation("FixedPartner2")
 }
 
 enum SessionType {
   AMERICANO
+  MEXICANO
 }
 
 model Community {
@@ -41,6 +44,7 @@ model Session {
   name           String
   date           DateTime
   sessionType    SessionType @default(AMERICANO)
+  fixedPartners  Boolean     @default(false)
   courts         Int
   dynamicCourts  Boolean     @default(false)
   courtName      String?
@@ -49,9 +53,21 @@ model Session {
   createdAt      DateTime    @default(now())
   communityId    String?
 
-  community Community?      @relation(fields: [communityId], references: [id])
-  players   SessionPlayer[]
-  rounds    Round[]
+  community         Community?         @relation(fields: [communityId], references: [id])
+  players           SessionPlayer[]
+  rounds            Round[]
+  fixedPartnerships FixedPartnership[]
+}
+
+model FixedPartnership {
+  id        String @id @default(cuid())
+  sessionId String
+  player1Id String
+  player2Id String
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player1 Player  @relation("FixedPartner1", fields: [player1Id], references: [id])
+  player2 Player  @relation("FixedPartner2", fields: [player2Id], references: [id])
 }
 
 model SessionPlayer {

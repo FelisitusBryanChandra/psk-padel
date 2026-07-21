@@ -12,6 +12,10 @@ export default function NewSessionPage() {
   const [courtName, setCourtName] = useState("");
   const [courts, setCourts] = useState(1);
   const [dynamicCourts, setDynamicCourts] = useState(false);
+  const [sessionType, setSessionType] = useState<"AMERICANO" | "MEXICANO">("AMERICANO");
+  const [fixedPartners, setFixedPartners] = useState(false);
+  const [pairs, setPairs] = useState<[string, string][]>([]);
+  const [selectedForPair, setSelectedForPair] = useState<string | null>(null);
   const [pointsPerMatch, setPointsPerMatch] = useState(21);
   const [pointsPerServe, setPointsPerServe] = useState(5);
   const [players, setPlayers] = useState<string[]>(["", "", "", ""]);
@@ -44,9 +48,47 @@ export default function NewSessionPage() {
     setPlayers((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  const cleanPlayerNames = [...new Set(players.map((p) => p.trim()).filter(Boolean))];
+
+  // Names get typed/edited freely while pairing, so a pair can go stale
+  // (renamed or removed player) — filter those out at render time rather
+  // than submit a partnership referencing a name that no longer exists.
+  const validPairs = pairs.filter(
+    ([a, b]) => cleanPlayerNames.includes(a) && cleanPlayerNames.includes(b)
+  );
+
+  const pairedNames = new Set(validPairs.flat());
+  const unpairedNames = cleanPlayerNames.filter((n) => !pairedNames.has(n));
+
+  function tapPlayer(namePlayer: string) {
+    if (selectedForPair === null) {
+      setSelectedForPair(namePlayer);
+    } else if (selectedForPair === namePlayer) {
+      setSelectedForPair(null);
+    } else {
+      setPairs((prev) => [...prev, [selectedForPair, namePlayer]]);
+      setSelectedForPair(null);
+    }
+  }
+
+  function unpair(pair: [string, string]) {
+    setPairs((prev) => prev.filter((p) => p !== pair));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (fixedPartners) {
+      if (cleanPlayerNames.length < 4 || cleanPlayerNames.length % 2 !== 0) {
+        setError("Fixed partners requires an even number of players, at least 4");
+        return;
+      }
+      if (unpairedNames.length > 0) {
+        setError("Pair up every player before creating the session");
+        return;
+      }
+    }
 
     const cleanPlayers = players.map((p) => p.trim()).filter(Boolean);
 
@@ -60,6 +102,9 @@ export default function NewSessionPage() {
         courtName: courtName.trim() || undefined,
         courts,
         dynamicCourts,
+        sessionType,
+        fixedPartners,
+        partnerships: fixedPartners ? validPairs : undefined,
         pointsPerMatch,
         pointsPerServe,
         playerNames: cleanPlayers,
@@ -169,6 +214,53 @@ export default function NewSessionPage() {
           </div>
         </div>
 
+        <div>
+          <span className="mb-2 block text-xs font-black uppercase tracking-widest text-ink-muted">
+            Match Type
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            {(["AMERICANO", "MEXICANO"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => {
+                  setSessionType(type);
+                  if (type === "AMERICANO") setFixedPartners(false);
+                }}
+                className={`rounded-xl py-3 text-sm font-bold capitalize transition-colors ${
+                  sessionType === type
+                    ? "bg-lime text-on-lime"
+                    : "neu-raised text-ink-muted"
+                }`}
+              >
+                {type === "AMERICANO" ? "Americano" : "Mexicano"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {sessionType === "MEXICANO" && (
+          <label className="neu-raised flex items-center justify-between rounded-xl p-3">
+            <span className="flex flex-col">
+              <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+                Fixed Partners
+              </span>
+              <span className="text-xs text-ink-muted">
+                Lock in teams for the whole session instead of rotating partners.
+              </span>
+            </span>
+            <span className="sort-toggle sort-toggle-stateful">
+              <input
+                type="checkbox"
+                className="sort-toggle-input"
+                checked={fixedPartners}
+                onChange={(e) => setFixedPartners(e.target.checked)}
+              />
+              <span className="sort-toggle-indicator" />
+            </span>
+          </label>
+        )}
+
         <label className="neu-raised flex items-center justify-between rounded-xl p-3">
           <span className="flex flex-col">
             <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
@@ -229,13 +321,76 @@ export default function NewSessionPage() {
             <span className="material-symbols-outlined">add_circle</span>
             Add player
           </button>
-          {players.filter((p) => p.trim()).length < 4 && (
+          {!fixedPartners && players.filter((p) => p.trim()).length < 4 && (
             <p className="mt-2 text-xs text-ink-muted">
               Fewer than 4 players &mdash; the session opens for self-registration until
               enough join to start.
             </p>
           )}
+          {fixedPartners && (cleanPlayerNames.length < 4 || cleanPlayerNames.length % 2 !== 0) && (
+            <p className="mt-2 text-xs text-ink-muted">
+              Fixed partners needs an even number of players, at least 4.
+            </p>
+          )}
         </div>
+
+        {fixedPartners && cleanPlayerNames.length >= 2 && (
+          <div>
+            <div className="mb-3 flex items-end justify-between">
+              <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+                Assign Teams
+              </span>
+              <span className="text-xs font-bold text-lime">
+                {validPairs.length} Team{validPairs.length === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            {unpairedNames.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-2 text-xs text-ink-muted">
+                  Tap two players to pair them up.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {unpairedNames.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => tapPlayer(name)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                        selectedForPair === name
+                          ? "bg-lime text-on-lime"
+                          : "neu-raised text-ink-muted"
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              {validPairs.map(([a, b], idx) => (
+                <div
+                  key={`${a}-${b}`}
+                  className="neu-inset-sm flex items-center justify-between rounded-xl px-4 py-2"
+                >
+                  <span className="text-sm text-ink">
+                    Team {idx + 1}: {a} &amp; {b}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => unpair(validPairs[idx])}
+                    aria-label="Unpair team"
+                    className="material-symbols-outlined text-lg text-ink-muted"
+                  >
+                    close
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
           {error && <p className="text-sm text-live">{error}</p>}
         </div>

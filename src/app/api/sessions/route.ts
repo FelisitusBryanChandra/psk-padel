@@ -10,6 +10,9 @@ const bodySchema = z.object({
   courtName: z.string().trim().max(120).optional(),
   courts: z.number().int().min(1).max(20),
   dynamicCourts: z.boolean().optional(),
+  sessionType: z.enum(["AMERICANO", "MEXICANO"]).optional(),
+  fixedPartners: z.boolean().optional(),
+  partnerships: z.array(z.tuple([z.string().max(80), z.string().max(80)])).optional(),
   pointsPerMatch: z.number().int().min(1).max(999).optional(),
   pointsPerServe: z.number().int().min(1).max(999).optional(),
   playerNames: z.array(z.string().max(80)).max(64),
@@ -40,10 +43,41 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 400 });
   }
-  const { name, date, courtName, courts, dynamicCourts, pointsPerMatch, pointsPerServe, playerNames } =
-    parsed.data;
+  const {
+    name,
+    date,
+    courtName,
+    courts,
+    dynamicCourts,
+    sessionType,
+    fixedPartners,
+    partnerships,
+    pointsPerMatch,
+    pointsPerServe,
+    playerNames,
+  } = parsed.data;
 
   const cleanNames = [...new Set(playerNames.map((n) => n.trim()).filter(Boolean))];
+
+  if (fixedPartners) {
+    if (cleanNames.length < 4 || cleanNames.length % 2 !== 0) {
+      return NextResponse.json(
+        { error: "Fixed partners requires an even number of players, at least 4" },
+        { status: 400 }
+      );
+    }
+    const pairedNames = (partnerships ?? []).flat();
+    const allPairedOnce =
+      pairedNames.length === cleanNames.length &&
+      new Set(pairedNames).size === cleanNames.length &&
+      cleanNames.every((n) => pairedNames.includes(n));
+    if (!allPairedOnce) {
+      return NextResponse.json(
+        { error: "Every player must be paired into exactly one team" },
+        { status: 400 }
+      );
+    }
+  }
 
   const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
 
@@ -55,20 +89,36 @@ export async function POST(req: NextRequest) {
         courtName,
         courts,
         dynamicCourts: dynamicCourts ?? false,
+        sessionType: sessionType ?? "AMERICANO",
+        fixedPartners: fixedPartners ?? false,
         pointsPerMatch: pointsPerMatch || 21,
         pointsPerServe: pointsPerServe || 5,
         communityId: auth?.role === "member" ? auth.communityId : undefined,
       },
     });
 
+    const nameToPlayerId = new Map<string, string>();
     for (const playerName of cleanNames) {
       let player = await tx.player.findFirst({ where: { name: playerName } });
       if (!player) {
         player = await tx.player.create({ data: { name: playerName } });
       }
+      nameToPlayerId.set(playerName, player.id);
       await tx.sessionPlayer.create({
         data: { sessionId: created.id, playerId: player.id },
       });
+    }
+
+    if (fixedPartners && partnerships) {
+      for (const [nameA, nameB] of partnerships) {
+        const player1Id = nameToPlayerId.get(nameA);
+        const player2Id = nameToPlayerId.get(nameB);
+        if (player1Id && player2Id) {
+          await tx.fixedPartnership.create({
+            data: { sessionId: created.id, player1Id, player2Id },
+          });
+        }
+      }
     }
 
     return created;
