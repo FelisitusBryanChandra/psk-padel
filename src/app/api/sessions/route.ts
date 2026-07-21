@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { generateNextRound } from "@/lib/rotation";
+import { generateInitialRounds } from "@/lib/rotation";
+
+const bodySchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  date: z.string().min(1),
+  courtName: z.string().trim().max(120).optional(),
+  courts: z.number().int().min(1).max(20),
+  dynamicCourts: z.boolean().optional(),
+  pointsPerMatch: z.number().int().min(1).max(999).optional(),
+  pointsPerServe: z.number().int().min(1).max(999).optional(),
+  playerNames: z.array(z.string().max(80)).max(64),
+});
 
 export async function GET() {
   const sessions = await prisma.session.findMany({
@@ -23,31 +35,23 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { name, date, courts, pointsPerMatch, pointsPerServe, playerNames } = body as {
-    name: string;
-    date: string;
-    courts: number;
-    pointsPerMatch?: number;
-    pointsPerServe?: number;
-    playerNames: string[];
-  };
+  const parsed = bodySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 400 });
+  }
+  const { name, date, courtName, courts, dynamicCourts, pointsPerMatch, pointsPerServe, playerNames } =
+    parsed.data;
 
   const cleanNames = [...new Set(playerNames.map((n) => n.trim()).filter(Boolean))];
-
-  if (!name || !date || !courts || cleanNames.length < 4) {
-    return NextResponse.json(
-      { error: "Name, date, courts and at least 4 players are required" },
-      { status: 400 }
-    );
-  }
 
   const session = await prisma.$transaction(async (tx) => {
     const created = await tx.session.create({
       data: {
         name,
         date: new Date(date),
+        courtName,
         courts,
+        dynamicCourts: dynamicCourts ?? false,
         pointsPerMatch: pointsPerMatch || 21,
         pointsPerServe: pointsPerServe || 5,
       },
@@ -66,13 +70,10 @@ export async function POST(req: NextRequest) {
     return created;
   });
 
-  // Auto-generate the standard round-robin length (players - 1) so everyone
-  // partners with everyone once, matching how Americano/AYO seed a session.
-  // Sit-outs within each round are still balanced by the rotation algorithm
-  // when there aren't enough courts for everyone to play every round.
-  const initialRounds = cleanNames.length - 1;
-  for (let i = 0; i < initialRounds; i++) {
-    await generateNextRound(session.id);
+  // Fewer than 4 players means registration is still open (see
+  // /session/[id]/register) — rounds get generated later via "Start Session".
+  if (cleanNames.length >= 4) {
+    await generateInitialRounds(session.id, cleanNames.length);
   }
 
   return NextResponse.json(session, { status: 201 });

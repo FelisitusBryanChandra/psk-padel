@@ -109,7 +109,7 @@ export default function SchedulePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-24">
-      <header className="sticky top-0 z-10 flex items-center gap-3 bg-bg px-5 py-4">
+      <header className="glass sticky top-0 z-10 flex items-center gap-3 px-5 py-4">
         <Link href="/" className="material-symbols-outlined text-ink">
           arrow_back
         </Link>
@@ -117,7 +117,7 @@ export default function SchedulePage() {
       </header>
 
       <div className="mb-4 px-5">
-        <div className="flex rounded-xl bg-surface-low p-1">
+        <div className="neu-inset flex rounded-xl p-1">
           <button
             onClick={() => setMode("export")}
             className={`flex-1 rounded-lg py-2.5 text-xs font-black uppercase tracking-widest transition-colors ${
@@ -147,7 +147,7 @@ export default function SchedulePage() {
               value={hostName}
               onChange={(e) => setHostName(e.target.value)}
               placeholder="e.g. Reynaldo Christie"
-              className="h-12 rounded-xl border-2 border-outline bg-surface-low px-4 text-base text-ink outline-none focus:border-lime"
+              className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none focus:border-lime"
             />
           </label>
           <label className="flex flex-col gap-2">
@@ -158,7 +158,7 @@ export default function SchedulePage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. BCA 7010342001"
-              className="h-12 rounded-xl border-2 border-outline bg-surface-low px-4 text-base text-ink outline-none focus:border-lime"
+              className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none focus:border-lime"
             />
           </label>
           <label className="flex flex-col gap-2">
@@ -169,7 +169,7 @@ export default function SchedulePage() {
               value={dateText}
               onChange={(e) => setDateText(e.target.value)}
               placeholder="e.g. Jumat 10 Juli jam 20.00-22.00"
-              className="h-12 rounded-xl border-2 border-outline bg-surface-low px-4 text-base text-ink outline-none focus:border-lime"
+              className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none focus:border-lime"
             />
           </label>
 
@@ -210,7 +210,7 @@ export default function SchedulePage() {
             <span className="mb-2 block text-xs font-black uppercase tracking-widest text-ink-muted">
               Preview
             </span>
-            <pre className="whitespace-pre-wrap rounded-xl border border-outline bg-surface-low p-4 text-sm text-ink">
+            <pre className="neu-inset whitespace-pre-wrap rounded-xl border border-white/5 p-4 text-sm text-ink">
               {exportText}
             </pre>
           </div>
@@ -230,7 +230,7 @@ export default function SchedulePage() {
             onChange={(e) => setImportText(e.target.value)}
             placeholder="Paste the schedule text here..."
             rows={12}
-            className="rounded-xl border-2 border-outline bg-surface-low p-4 text-sm text-ink outline-none focus:border-lime"
+            className="neu-inset rounded-xl border border-white/5 p-4 text-sm text-ink outline-none focus:border-lime"
           />
           {importError && <p className="text-sm text-live">{importError}</p>}
           <button

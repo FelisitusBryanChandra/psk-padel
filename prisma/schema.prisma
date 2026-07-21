@@ -22,14 +22,21 @@ model Player {
   team2Player2Of  Match[]         @relation("Team2Player2")
 }
 
+enum SessionType {
+  AMERICANO
+}
+
 model Session {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   name           String
   date           DateTime
+  sessionType    SessionType @default(AMERICANO)
   courts         Int
-  pointsPerMatch Int      @default(21)
-  pointsPerServe Int      @default(5)
-  createdAt      DateTime @default(now())
+  dynamicCourts  Boolean     @default(false)
+  courtName      String?
+  pointsPerMatch Int         @default(21)
+  pointsPerServe Int         @default(5)
+  createdAt      DateTime    @default(now())
 
   players SessionPlayer[]
   rounds  Round[]

@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #121508;
-  --color-surface: #1e2113;
-  --color-surface-low: #1a1d10;
-  --color-surface-high: #292b1d;
-  --color-surface-highest: #333627;
+  --color-bg: #17151c;
+  --color-surface: #211f28;
+  --color-surface-low: #1c1a22;
+  --color-surface-high: #2d2a35;
+  --color-surface-highest: #3a3641;
 
-  --color-ink: #e2e4cf;
-  --color-ink-muted: #c5c9ac;
-  --color-outline: #444932;
+  --color-ink: #f1efe9;
+  --color-ink-muted: #b3aebd;
+  --color-outline: #45414f;
 
   --color-lime: #caf300;
   --color-lime-dim: #b0d500;
@@ -22,26 +22,182 @@
   --color-silver: #c0c0c0;
   --color-bronze: #cd7f32;
 
+  --color-accent-blue: #6fb8ff;
+  --color-accent-orange: #ffb238;
+
   --font-heading: var(--font-heading), sans-serif;
   --font-body: var(--font-body), sans-serif;
+
+  --shadow-neu-dark: rgba(0, 0, 0, 0.55);
+  --shadow-neu-light: rgba(255, 255, 255, 0.035);
 }
 
 /* Light mode overrides the same tokens the dark @theme block defines above;
    toggling the `light` class on <html> is all ThemeToggle needs to do. */
 .light {
-  --color-bg: #f8f9fa;
-  --color-surface: #ffffff;
-  --color-surface-low: #f3f4f5;
-  --color-surface-high: #e7e8e9;
-  --color-surface-highest: #e1e3e4;
+  --color-bg: #f7f3e9;
+  --color-surface: #fffcf5;
+  --color-surface-low: #f1ecdd;
+  --color-surface-high: #e8e1cc;
+  --color-surface-highest: #ded5b9;
 
-  --color-ink: #191c1d;
-  --color-ink-muted: #5d5e61;
-  --color-outline: #dde2e5;
+  --color-ink: #26221a;
+  --color-ink-muted: #6e6552;
+  --color-outline: #ded3ba;
+
+  --color-accent-blue: #1f7ae0;
+  --color-accent-orange: #c97800;
+
+  --shadow-neu-dark: rgba(38, 34, 26, 0.14);
+  --shadow-neu-light: rgba(255, 255, 255, 0.9);
 }
 
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* Glassmorphism: translucent, blurred surfaces for panels that float over
+   page content (modals, sticky headers, cards). Built from the existing
+   surface/ink tokens via color-mix so it tracks the light/dark theme
+   automatically instead of needing its own overrides. The saturate() boost
+   makes whatever's blurred behind the panel read as "frosted" rather than
+   just dimmed; the drop shadow + inset top sheen are what sell it as a
+   pane floating above the page instead of a flat panel — reusing the same
+   --shadow-neu-* tokens as the neumorphic surfaces so both styles still
+   feel like one lighting system. */
+.glass {
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
+  box-shadow:
+    0 2px 6px -2px var(--shadow-neu-dark),
+    0 16px 36px -8px var(--shadow-neu-dark),
+    inset 0 1px 0 var(--shadow-neu-light);
+}
+.glass-strong {
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  backdrop-filter: blur(28px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+  box-shadow:
+    0 4px 10px -2px var(--shadow-neu-dark),
+    0 24px 56px -12px var(--shadow-neu-dark),
+    inset 0 1px 0 var(--shadow-neu-light);
+}
+
+/* Neumorphism: soft dual-shadow relief for small tactile controls sitting
+   flush on a surface (toggles, steppers, pressable buttons). --shadow-neu-*
+   are themed in the @theme / .light blocks above. */
+.neu-raised {
+  background: var(--color-surface);
+  box-shadow:
+    5px 5px 12px var(--shadow-neu-dark),
+    -5px -5px 12px var(--shadow-neu-light);
+}
+.neu-inset {
+  background: var(--color-surface);
+  box-shadow:
+    inset 4px 4px 9px var(--shadow-neu-dark),
+    inset -4px -4px 9px var(--shadow-neu-light);
+}
+.neu-inset-sm {
+  background: var(--color-surface);
+  box-shadow:
+    inset 2px 2px 5px var(--shadow-neu-dark),
+    inset -2px -2px 5px var(--shadow-neu-light);
+}
+
+/* Two-state slide switch (adapted from https://uiverse.io/mobinkakei/great-skunk-8,
+   MIT-licensed) — retextured with --shadow-neu-* / lime instead of the
+   original's hardcoded light-only colors. The indicator is 200% of the
+   track width and slides between -75%/25%; only half is ever visible
+   (clipped by overflow:hidden), which is what gives the moving fill
+   rounded ends matching the track instead of a knob with visible seams. */
+.sort-toggle {
+  isolation: isolate;
+  position: relative;
+  display: inline-block;
+  height: 22px;
+  width: 44px;
+  border-radius: 11px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow:
+    inset 2px 2px 5px var(--shadow-neu-dark),
+    inset -2px -2px 5px var(--shadow-neu-light);
+}
+.sort-toggle-input {
+  display: none;
+}
+.sort-toggle-indicator {
+  display: block;
+  height: 100%;
+  width: 200%;
+  background: var(--color-lime);
+  border-radius: 11px;
+  transform: translate3d(-75%, 0, 0);
+  transition: transform 0.4s cubic-bezier(0.85, 0.05, 0.18, 1.35);
+}
+.sort-toggle-input:checked ~ .sort-toggle-indicator {
+  transform: translate3d(25%, 0, 0);
+}
+
+/* Pill button with a shimmering border and a springy hover scale (adapted
+   from https://uiverse.io/LilaRest/loud-walrus-26, MIT-licensed) —
+   retextured with lime/surface color-mix instead of the original's
+   hardcoded pink, so it tracks the light/dark theme automatically. */
+.shimmer-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 3px solid color-mix(in srgb, var(--color-lime) 25%, var(--color-surface));
+  background: var(--color-surface);
+  padding: 12px 20px;
+  box-shadow: inset 0 -2px 6px 0 var(--shadow-neu-dark);
+  color: var(--color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 400ms cubic-bezier(0.68, -0.55, 0.27, 2.5),
+    border-color 400ms ease-in-out,
+    background-color 400ms ease-in-out,
+    color 200ms ease-in-out;
+}
+.shimmer-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  background: color-mix(in srgb, var(--color-lime) 8%, var(--color-surface));
+  color: var(--color-ink);
+  animation: shimmer-border 3s infinite;
+}
+.shimmer-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.shimmer-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+@keyframes shimmer-border {
+  0%,
+  90% {
+    border-color: color-mix(in srgb, var(--color-lime) 25%, var(--color-surface));
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--color-lime) 55%, var(--color-surface));
+  }
+}
+
+/* For horizontally-scrolling strips (e.g. the player chip row) where the
+   scrollbar is just visual noise, not a primary content list. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 ::-webkit-scrollbar {
@@ -56,13 +212,59 @@
   border-radius: 10px;
 }
 
+@keyframes loading-modal-entrance {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.loading-modal-entrance {
+  animation: loading-modal-entrance 0.4s ease-out;
+}
+
+@keyframes loading-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.loading-ring {
+  animation: loading-ring-spin 6s linear infinite;
+}
+.loading-ring-delay-1 {
+  animation-duration: 4s;
+  animation-direction: reverse;
+}
+.loading-ring-delay-2 {
+  animation-duration: 3s;
+}
+
+@keyframes loading-progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+.loading-progress-indeterminate {
+  animation: loading-progress-indeterminate 1.5s ease-in-out infinite;
+}
+
 /* Rotates the Scoreboard screen into landscape on portrait phones/tablets. */
 @media (max-width: 900px) and (orientation: portrait) {
   .landscape-force {
     position: fixed;
     inset: 0;
-    width: 100vh;
-    height: 100vw;
+    width: 100dvh;
+    height: 100dvw;
+    min-height: 0;
     transform-origin: top left;
     transform: rotate(90deg) translateY(-100%);
   }

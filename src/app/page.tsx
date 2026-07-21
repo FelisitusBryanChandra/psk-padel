@@ -29,7 +29,7 @@ export default async function HomePage() {
           <ThemeToggle />
           <Link
             href="/schedule"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-outline text-ink-muted"
+            className="neu-raised flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-shadow active:shadow-none"
             aria-label="Plan & share schedule"
           >
             <span className="material-symbols-outlined text-lg">share</span>
@@ -90,7 +90,7 @@ export default async function HomePage() {
               return (
                 <div
                   key={s.id}
-                  className="relative rounded-xl border border-outline bg-surface/70 p-4 backdrop-blur-md transition-colors active:scale-[0.98]"
+                  className="glass relative rounded-xl p-4 transition-colors active:scale-[0.98]"
                 >
                   <Link href={`/session/${s.id}`} className="absolute inset-0" aria-label={s.name} />
                   <div className="pointer-events-none relative">
@@ -124,7 +124,7 @@ export default async function HomePage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2 border-t border-outline/30 pt-3">
-                      <div className="rounded-lg bg-surface-high p-2 text-center">
+                      <div className="neu-inset-sm rounded-lg p-2 text-center">
                         <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
                           Players
                         </p>
@@ -132,13 +132,13 @@ export default async function HomePage() {
                           {s.players.length}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-surface-high p-2 text-center">
+                      <div className="neu-inset-sm rounded-lg p-2 text-center">
                         <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
                           Courts
                         </p>
                         <p className="font-heading text-lg font-bold text-ink">{s.courts}</p>
                       </div>
-                      <div className="rounded-lg bg-surface-high p-2 text-center">
+                      <div className="neu-inset-sm rounded-lg p-2 text-center">
                         <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
                           Rounds
                         </p>

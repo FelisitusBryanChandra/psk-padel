@@ -2,35 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import { StandingsTable } from "../page";
-
-type PlayerRef = { id: string; name: string };
-
-type MatchDto = {
-  id: string;
-  courtNumber: number;
-  team1Player1: PlayerRef;
-  team1Player2: PlayerRef;
-  team2Player1: PlayerRef;
-  team2Player2: PlayerRef;
-  team1Score: number;
-  team2Score: number;
-  completed: boolean;
-};
-
-type RoundDto = { id: string; roundNumber: number; matches: MatchDto[] };
-
-type StandingRow = {
-  playerId: string;
-  name: string;
-  played: number;
-  wins: number;
-  ties: number;
-  losses: number;
-  sd: number;
-  missedRounds: number;
-  mBonus: number;
-  score: number;
-};
+import type { RoundDto, StandingRow } from "@/lib/types";
 
 export default function BoardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -80,7 +52,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
           {liveMatches.map((m) => (
             <div
               key={m.id}
-              className="flex items-center justify-between rounded-xl border border-outline/30 bg-surface-low px-4 py-3"
+              className="glass flex items-center justify-between rounded-xl px-4 py-3"
             >
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">

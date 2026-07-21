@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+
+const bodySchema = z.object({ newName: z.string().trim().min(1).max(80) });
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; playerId: string }> }
 ) {
   const { id: sessionId, playerId } = await params;
-  const { newName } = (await req.json()) as { newName: string };
-
-  const cleanName = newName?.trim();
-  if (!cleanName) {
+  const parsed = bodySchema.safeParse(await req.json());
+  if (!parsed.success) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
+  const cleanName = parsed.data.newName;
 
   await prisma.$transaction(async (tx) => {
     let newPlayer = await tx.player.findFirst({ where: { name: cleanName } });

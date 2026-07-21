@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Spinner } from "@/app/Spinner";
 
 export default function NewSessionPage() {
   const router = useRouter();
   const [name, setName] = useState("PSK Padel Session");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [courtName, setCourtName] = useState("");
   const [courts, setCourts] = useState(1);
+  const [dynamicCourts, setDynamicCourts] = useState(false);
   const [pointsPerMatch, setPointsPerMatch] = useState(21);
   const [pointsPerServe, setPointsPerServe] = useState(5);
   const [players, setPlayers] = useState<string[]>(["", "", "", ""]);
@@ -46,10 +49,6 @@ export default function NewSessionPage() {
     setError("");
 
     const cleanPlayers = players.map((p) => p.trim()).filter(Boolean);
-    if (cleanPlayers.length < 4) {
-      setError("Add at least 4 players");
-      return;
-    }
 
     setLoading(true);
     const res = await fetch("/api/sessions", {
@@ -58,7 +57,9 @@ export default function NewSessionPage() {
       body: JSON.stringify({
         name,
         date,
+        courtName: courtName.trim() || undefined,
         courts,
+        dynamicCourts,
         pointsPerMatch,
         pointsPerServe,
         playerNames: cleanPlayers,
@@ -78,7 +79,7 @@ export default function NewSessionPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28">
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-bg px-5 py-4">
+      <header className="glass sticky top-0 z-10 flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-2xl text-ink">sports_tennis</span>
           <h1 className="font-heading text-xl font-black tracking-tight text-ink">PSK Padel</h1>
@@ -103,7 +104,7 @@ export default function NewSessionPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Wednesday Night Fever"
-            className="h-12 rounded-xl border-2 border-outline bg-surface-low px-4 text-base text-ink outline-none transition-colors focus:border-lime"
+            className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none transition-colors focus:border-lime"
           />
         </label>
 
@@ -113,12 +114,24 @@ export default function NewSessionPage() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-12 rounded-xl border-2 border-outline bg-surface-low px-4 text-base text-ink outline-none transition-colors focus:border-lime"
+            className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none transition-colors focus:border-lime"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+            Court Name
+          </span>
+          <input
+            value={courtName}
+            onChange={(e) => setCourtName(e.target.value)}
+            placeholder="e.g. PSK Arena"
+            className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none transition-colors focus:border-lime"
           />
         </label>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="flex flex-col items-center gap-1 rounded-xl border border-outline bg-surface p-3">
+          <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
               Courts
             </span>
@@ -130,7 +143,7 @@ export default function NewSessionPage() {
               className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
             />
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-xl border border-outline bg-surface p-3">
+          <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
               Max Pts
             </span>
@@ -142,7 +155,7 @@ export default function NewSessionPage() {
               className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
             />
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-xl border border-outline bg-surface p-3">
+          <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
               Serves
             </span>
@@ -156,6 +169,26 @@ export default function NewSessionPage() {
           </div>
         </div>
 
+        <label className="neu-raised flex items-center justify-between rounded-xl p-3">
+          <span className="flex flex-col">
+            <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+              Dynamic Court
+            </span>
+            <span className="text-xs text-ink-muted">
+              Lets you bump the court count mid-session as more courts free up.
+            </span>
+          </span>
+          <span className="sort-toggle">
+            <input
+              type="checkbox"
+              className="sort-toggle-input"
+              checked={dynamicCourts}
+              onChange={(e) => setDynamicCourts(e.target.checked)}
+            />
+            <span className="sort-toggle-indicator" />
+          </span>
+        </label>
+
         <div>
           <div className="mb-3 flex items-end justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
@@ -168,7 +201,7 @@ export default function NewSessionPage() {
           <div className="flex flex-col gap-2">
             {players.map((p, idx) => (
               <div key={idx} className="flex items-center gap-2">
-                <div className="flex h-12 flex-1 items-center rounded-xl border-2 border-outline bg-surface-low px-4 transition-colors focus-within:border-lime">
+                <div className="neu-inset flex h-12 flex-1 items-center rounded-xl border border-white/5 px-4 transition-colors focus-within:border-lime">
                   <span className="material-symbols-outlined mr-2 text-lg text-outline">person</span>
                   <input
                     value={p}
@@ -187,27 +220,33 @@ export default function NewSessionPage() {
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              onClick={addPlayer}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline py-4 text-sm font-bold text-ink-muted transition-colors active:scale-[0.98]"
-            >
-              <span className="material-symbols-outlined">add_circle</span>
-              Add player
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={addPlayer}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline py-4 text-sm font-bold text-ink-muted transition-colors active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            Add player
+          </button>
+          {players.filter((p) => p.trim()).length < 4 && (
+            <p className="mt-2 text-xs text-ink-muted">
+              Fewer than 4 players &mdash; the session opens for self-registration until
+              enough join to start.
+            </p>
+          )}
         </div>
 
           {error && <p className="text-sm text-live">{error}</p>}
         </div>
 
-        <div className="sticky bottom-0 z-10 border-t border-outline bg-surface-high/90 px-5 py-4 backdrop-blur-md">
+        <div className="glass-strong fixed bottom-0 left-1/2 z-10 w-full max-w-md -translate-x-1/2 px-5 py-4">
           <button
             type="submit"
             disabled={loading}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-lime font-heading text-base font-black text-on-lime shadow-lg transition-transform active:scale-95 disabled:opacity-40"
           >
-            <span className="material-symbols-outlined">bolt</span>
+            {loading ? <Spinner className="text-xl" /> : <span className="material-symbols-outlined">bolt</span>}
             {loading ? "Creating..." : "Create Session"}
           </button>
         </div>

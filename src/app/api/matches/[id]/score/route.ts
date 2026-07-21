@@ -1,27 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { nextServeState } from "@/lib/serve";
 
+const bodySchema = z
+  .object({
+    team: z.union([z.literal(1), z.literal(2)]),
+    delta: z.union([z.literal(1), z.literal(-1)]).optional(),
+    value: z.number().int().min(0).max(999).optional(),
+  })
+  .refine((d) => d.delta !== undefined || d.value !== undefined, {
+    message: "Provide delta or value",
+  });
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { team, delta, value } = (await req.json()) as {
-    team: 1 | 2;
-    delta?: 1 | -1;
-    value?: number;
-  };
-
-  if (team !== 1 && team !== 2) {
-    return NextResponse.json({ error: "Invalid team" }, { status: 400 });
+  const parsed = bodySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 400 });
   }
-  if (delta === undefined && value === undefined) {
-    return NextResponse.json({ error: "Provide delta or value" }, { status: 400 });
-  }
-  if (delta !== undefined && delta !== 1 && delta !== -1) {
-    return NextResponse.json({ error: "Invalid delta" }, { status: 400 });
-  }
-  if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
-    return NextResponse.json({ error: "Invalid value" }, { status: 400 });
-  }
+  const { team, delta, value } = parsed.data;
 
   const match = await prisma.match.findUnique({
     where: { id },

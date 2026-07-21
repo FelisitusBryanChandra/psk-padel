@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Rubik } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -34,13 +35,17 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        <script
+      </head>
+      <body className="min-h-full flex flex-col bg-bg text-ink font-body">
+        <Script
+          id="theme-no-flash"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}}catch(e){}`,
           }}
         />
-      </head>
-      <body className="min-h-full flex flex-col bg-bg text-ink font-body">{children}</body>
+        {children}
+      </body>
     </html>
   );
 }

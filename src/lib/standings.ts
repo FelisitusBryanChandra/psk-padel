@@ -42,10 +42,10 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
     });
   }
 
-  const totalRounds = session.rounds.length;
-
   for (const round of session.rounds) {
     for (const m of round.matches) {
+      if (!m.completed) continue;
+
       const team1 = [m.team1Player1Id, m.team1Player2Id];
       const team2 = [m.team2Player1Id, m.team2Player2Id];
 
@@ -53,8 +53,6 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
         const row = rows.get(id);
         if (row) row.played += 1;
       }
-
-      if (!m.completed) continue;
 
       const applyTeam = (ids: string[], ownScore: number, oppScore: number) => {
         for (const id of ids) {
@@ -73,11 +71,13 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
     }
   }
 
+  const maxPlayed = Math.max(0, ...Array.from(rows.values(), (r) => r.played));
+
   for (const row of rows.values()) {
-    row.missedRounds = totalRounds - row.played;
+    row.missedRounds = maxPlayed - row.played;
     row.mBonus = row.missedRounds * 10;
     row.sd = row.pointsFor - row.pointsAgainst;
-    row.score = row.pointsFor;
+    row.score = row.pointsFor + row.mBonus;
   }
 
   return Array.from(rows.values());

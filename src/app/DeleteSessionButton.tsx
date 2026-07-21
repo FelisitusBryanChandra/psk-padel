@@ -16,9 +16,10 @@ export function DeleteSessionButton({ sessionId, name }: { sessionId: string; na
   }
 
   async function handleDelete() {
-    setConfirming(false);
     setDeleting(true);
     await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
+    setDeleting(false);
+    setConfirming(false);
     router.refresh();
   }
 
@@ -37,6 +38,7 @@ export function DeleteSessionButton({ sessionId, name }: { sessionId: string; na
         title="Delete session?"
         message={`Delete "${name}"? This removes all its rounds and scores permanently.`}
         confirmLabel="Delete"
+        loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setConfirming(false)}
       />

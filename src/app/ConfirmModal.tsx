@@ -1,10 +1,13 @@
 "use client";
 
+import { Spinner } from "@/app/Spinner";
+
 export function ConfirmModal({
   open,
   title,
   message,
   confirmLabel = "Confirm",
+  loading = false,
   onConfirm,
   onCancel,
 }: {
@@ -12,6 +15,7 @@ export function ConfirmModal({
   title: string;
   message: string;
   confirmLabel?: string;
+  loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -20,10 +24,10 @@ export function ConfirmModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6"
-      onClick={onCancel}
+      onClick={loading ? undefined : onCancel}
     >
       <div
-        className="w-full max-w-sm rounded-2xl border border-outline bg-surface-high p-6 shadow-2xl"
+        className="glass-strong w-full max-w-sm rounded-2xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-heading text-lg font-black text-ink">{title}</h3>
@@ -31,14 +35,17 @@ export function ConfirmModal({
         <div className="mt-6 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-xl border border-outline py-3 text-xs font-black uppercase tracking-widest text-ink-muted active:scale-95 transition-transform"
+            disabled={loading}
+            className="neu-raised flex-1 rounded-xl py-3 text-xs font-black uppercase tracking-widest text-ink-muted transition-shadow active:shadow-none disabled:opacity-40"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 rounded-xl bg-live py-3 text-xs font-black uppercase tracking-widest text-white active:scale-95 transition-transform"
+            disabled={loading}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-live py-3 text-xs font-black uppercase tracking-widest text-white active:scale-95 transition-transform disabled:opacity-70"
           >
+            {loading && <Spinner className="text-base" />}
             {confirmLabel}
           </button>
         </div>

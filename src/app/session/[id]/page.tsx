@@ -1,57 +1,67 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ConfirmModal } from "@/app/ConfirmModal";
 import { ThemeToggle } from "@/app/ThemeToggle";
-
-type PlayerRef = { id: string; name: string };
-
-type MatchDto = {
-  id: string;
-  courtNumber: number;
-  team1Player1: PlayerRef;
-  team1Player2: PlayerRef;
-  team2Player1: PlayerRef;
-  team2Player2: PlayerRef;
-  team1Score: number;
-  team2Score: number;
-  completed: boolean;
-  servingTeam: number;
-  team1ServerSlot: number;
-  team2ServerSlot: number;
-};
-
-type RoundDto = { id: string; roundNumber: number; matches: MatchDto[] };
-
-type SessionDto = {
-  id: string;
-  name: string;
-  courts: number;
-  pointsPerMatch: number;
-  pointsPerServe: number;
-  players: { player: PlayerRef }[];
-  rounds: RoundDto[];
-};
-
-type StandingRow = {
-  playerId: string;
-  name: string;
-  played: number;
-  wins: number;
-  ties: number;
-  losses: number;
-  sd: number;
-  missedRounds: number;
-  mBonus: number;
-  score: number;
-};
+import { Spinner } from "@/app/Spinner";
+import { LoadingModal } from "@/app/LoadingModal";
+import type { PlayerRef, MatchDto, SessionDto, StandingRow } from "@/lib/types";
 
 function servingPlayer(m: MatchDto): PlayerRef {
   if (m.servingTeam === 1) {
     return m.team1ServerSlot === 1 ? m.team1Player1 : m.team1Player2;
   }
   return m.team2ServerSlot === 1 ? m.team2Player1 : m.team2Player2;
+}
+
+const MATCH_SLOTS = ["team1Player1", "team1Player2", "team2Player1", "team2Player2"] as const;
+type MatchSlot = (typeof MATCH_SLOTS)[number];
+
+function PlayerChip({
+  match,
+  slot,
+  roster,
+  open,
+  onOpen,
+  onClose,
+  onPick,
+}: {
+  match: MatchDto;
+  slot: MatchSlot;
+  roster: PlayerRef[];
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onPick: (playerId: string) => void;
+}) {
+  const player = match[slot];
+  const otherIds = MATCH_SLOTS.filter((s) => s !== slot).map((s) => match[s].id);
+  const options = roster.filter((p) => !otherIds.includes(p.id));
+
+  if (open) {
+    return (
+      <select
+        autoFocus
+        value={player.id}
+        onChange={(e) => onPick(e.target.value)}
+        onBlur={onClose}
+        className="rounded border border-lime bg-surface-low px-1 text-sm text-ink"
+      >
+        {options.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  return (
+    <button onClick={onOpen} className="underline decoration-dotted underline-offset-2">
+      {player.name}
+    </button>
+  );
 }
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -62,8 +72,37 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [sortBy, setSortBy] = useState<"sd" | "score">("sd");
   const [generating, setGenerating] = useState(false);
   const [confirmingEnd, setConfirmingEnd] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [rebalancing, setRebalancing] = useState(false);
+  const [confirmingRebalance, setConfirmingRebalance] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [swappingId, setSwappingId] = useState<string | null>(null);
   const [swapName, setSwapName] = useState("");
+  const [editingCourts, setEditingCourts] = useState(false);
+  const [courtsValue, setCourtsValue] = useState(1);
+  const [savingCourts, setSavingCourts] = useState(false);
+  const [editingScoreId, setEditingScoreId] = useState<string | null>(null);
+  const [editScores, setEditScores] = useState({ team1: 0, team2: 0 });
+  const [savingScore, setSavingScore] = useState(false);
+  const [reshuffling, setReshuffling] = useState<{ matchId: string; slot: MatchSlot } | null>(
+    null
+  );
+  const chipRowRef = useRef<HTMLDivElement>(null);
+
+  // Mouse wheel has no horizontal axis, and the strip's scrollbar is hidden,
+  // so without this a mouse-only (non-touch, non-trackpad) user has no way
+  // to reach chips past the visible width.
+  useEffect(() => {
+    const el = chipRowRef.current;
+    if (!el) return;
+    function onWheel(e: WheelEvent) {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      el!.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [session?.id]);
 
   const hasLive = session?.rounds
     .at(-1)
@@ -101,9 +140,38 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     refresh();
   }
 
+  async function startSession() {
+    setStarting(true);
+    await fetch(`/api/sessions/${id}/start`, { method: "POST" });
+    setStarting(false);
+    refresh();
+  }
+
+  async function rebalanceRounds() {
+    setRebalancing(true);
+    await fetch(`/api/sessions/${id}/rebalance`, { method: "POST" });
+    setRebalancing(false);
+    setConfirmingRebalance(false);
+    refresh();
+  }
+
   async function endSession() {
-    setConfirmingEnd(false);
+    setEnding(true);
     await fetch(`/api/sessions/${id}/end`, { method: "POST" });
+    setEnding(false);
+    setConfirmingEnd(false);
+    refresh();
+  }
+
+  async function saveCourts() {
+    setSavingCourts(true);
+    await fetch(`/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courts: courtsValue }),
+    });
+    setSavingCourts(false);
+    setEditingCourts(false);
     refresh();
   }
 
@@ -120,47 +188,113 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     refresh();
   }
 
-  function nextSort() {
-    setSortBy((s) => (s === "sd" ? "score" : "sd"));
+  function startEditScore(m: MatchDto) {
+    setEditingScoreId(m.id);
+    setEditScores({ team1: m.team1Score, team2: m.team2Score });
+  }
+
+  async function saveEditScore(matchId: string) {
+    setSavingScore(true);
+    await fetch(`/api/matches/${matchId}/finalize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ team1Score: editScores.team1, team2Score: editScores.team2 }),
+    });
+    setSavingScore(false);
+    setEditingScoreId(null);
+    refresh();
+  }
+
+  async function replacePlayer(matchId: string, slot: MatchSlot, playerId: string) {
+    setReshuffling(null);
+    await fetch(`/api/matches/${matchId}/player`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slot, playerId }),
+    });
+    refresh();
   }
 
   if (!session) {
-    return (
-      <main className="flex flex-1 items-center justify-center bg-bg text-ink-muted">
-        Loading...
-      </main>
-    );
+    return <LoadingModal open />;
   }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-24">
-      <header className="sticky top-0 z-10 bg-bg px-5 py-4">
+      <header className="glass sticky top-0 z-10 px-5 py-4">
         <div className="mb-3 flex items-center gap-3">
           <Link href="/" className="material-symbols-outlined text-ink">
             arrow_back
           </Link>
           <div className="flex-1">
             <h1 className="font-heading text-lg font-black text-ink">{session.name}</h1>
+            {session.courtName && (
+              <p className="text-xs text-ink-muted">{session.courtName}</p>
+            )}
             <p className="text-xs text-ink-muted">
-              {session.players.length} players &middot; {session.courts} court
-              {session.courts > 1 ? "s" : ""} &middot; to {session.pointsPerMatch}, serve/
-              {session.pointsPerServe}
+              {session.players.length} players &middot;{" "}
+              {session.dynamicCourts && editingCourts ? (
+                <span className="inline-flex items-center gap-1 align-middle">
+                  <input
+                    autoFocus
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={courtsValue}
+                    onChange={(e) => setCourtsValue(Number(e.target.value))}
+                    className="w-10 rounded border border-lime bg-surface-low px-1 text-xs text-ink"
+                  />
+                  <button
+                    onClick={saveCourts}
+                    disabled={savingCourts}
+                    aria-label="Save courts"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-lime text-on-lime"
+                  >
+                    <span className="material-symbols-outlined text-xs">check</span>
+                  </button>
+                  <button
+                    onClick={() => setEditingCourts(false)}
+                    aria-label="Cancel edit"
+                    className="flex h-5 w-5 items-center justify-center text-ink-muted"
+                  >
+                    <span className="material-symbols-outlined text-xs">close</span>
+                  </button>
+                </span>
+              ) : session.dynamicCourts ? (
+                <button
+                  onClick={() => {
+                    setEditingCourts(true);
+                    setCourtsValue(session.courts);
+                  }}
+                  className="underline decoration-dotted underline-offset-2"
+                >
+                  {session.courts} court{session.courts > 1 ? "s" : ""}
+                </button>
+              ) : (
+                <span>
+                  {session.courts} court{session.courts > 1 ? "s" : ""}
+                </span>
+              )}{" "}
+              &middot; to {session.pointsPerMatch}, serve/{session.pointsPerServe}
             </p>
           </div>
           <ThemeToggle />
           {hasIncomplete && (
             <button
               onClick={() => setConfirmingEnd(true)}
-              className="whitespace-nowrap rounded-full border border-outline px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-ink-muted"
+              className="neu-raised whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-ink-muted transition-shadow active:shadow-none"
             >
               End Session
             </button>
           )}
         </div>
 
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div
+          ref={chipRowRef}
+          className="no-scrollbar mb-2 flex snap-x gap-2 overflow-x-auto scroll-smooth"
+        >
           {session.players.map(({ player }) => (
-            <div key={player.id}>
+            <div key={player.id} className="shrink-0 snap-start">
               {swappingId === player.id ? (
                 <div className="flex items-center gap-1 rounded-full border border-lime bg-surface-low pl-3 pr-1">
                   <input
@@ -189,10 +323,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                     setSwappingId(player.id);
                     setSwapName("");
                   }}
-                  className="flex items-center gap-1 rounded-full border border-outline px-3 py-1 text-xs text-ink-muted"
+                  className="neu-raised flex items-center gap-1 rounded-full px-3 py-1 text-xs text-ink-muted transition-shadow active:shadow-none"
                 >
                   {player.name}
-                  <span className="material-symbols-outlined text-sm">swap_horiz</span>
+                  <span className="material-symbols-outlined text-sm text-accent-blue">
+                    swap_horiz
+                  </span>
                 </button>
               )}
             </div>
@@ -233,8 +369,50 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         </div>
       </header>
 
-      {tab === "matches" && (
+      {tab === "matches" && session.rounds.length === 0 && (
+        <div className="flex flex-col gap-4 px-5 pt-4">
+          <div className="rounded-xl border-2 border-dashed border-outline p-6 text-center">
+            <p className="text-sm text-ink-muted">
+              Registration is open &mdash; share this link so players can add their own name.
+            </p>
+            <Link
+              href={`/session/${id}/register`}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-surface-highest px-4 py-2 text-sm font-bold text-ink"
+            >
+              <span className="material-symbols-outlined text-lg">person_add</span>
+              Open Registration Page
+            </Link>
+          </div>
+          <button
+            onClick={startSession}
+            disabled={starting || session.players.length < 4}
+            className="shimmer-btn"
+          >
+            {starting ? (
+              <Spinner className="text-base" />
+            ) : (
+              <span className="material-symbols-outlined text-base">bolt</span>
+            )}
+            {starting
+              ? "Starting..."
+              : session.players.length < 4
+                ? `Need ${4 - session.players.length} more player${4 - session.players.length > 1 ? "s" : ""}`
+                : "Start Session"}
+          </button>
+        </div>
+      )}
+
+      {tab === "matches" && session.rounds.length > 0 && (
         <div className="flex flex-col gap-6 px-5 pt-4">
+          <button
+            onClick={() => setConfirmingRebalance(true)}
+            disabled={rebalancing}
+            className="shimmer-btn"
+          >
+            {rebalancing ? <Spinner className="text-base" /> : <span className="material-symbols-outlined text-base">balance</span>}
+            {rebalancing ? "Rebalancing..." : "Rebalance Remaining Rounds"}
+          </button>
+
           {session.rounds.map((round) => (
             <section key={round.id} className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
@@ -249,7 +427,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   return (
                     <div
                       key={m.id}
-                      className="overflow-hidden rounded-xl border border-outline/30 bg-surface shadow-lg"
+                      className="glass overflow-hidden rounded-xl"
                     >
                       <div className="flex items-start justify-between p-4">
                         <div>
@@ -264,10 +442,27 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                               </span>
                             )}
                           </div>
-                          <p className="text-sm leading-tight text-ink">
-                            {m.team1Player1.name} &amp; {m.team1Player2.name}
-                            <span className="mx-1 italic text-ink-muted">vs</span>
-                            {m.team2Player1.name} &amp; {m.team2Player2.name}
+                          <p className="flex flex-wrap items-center gap-x-1 text-sm leading-tight text-ink">
+                            {MATCH_SLOTS.map((slot, idx) => (
+                              <span key={slot} className="flex items-center gap-x-1">
+                                <PlayerChip
+                                  match={m}
+                                  slot={slot}
+                                  roster={session.players.map((sp) => sp.player)}
+                                  open={
+                                    reshuffling?.matchId === m.id && reshuffling.slot === slot
+                                  }
+                                  onOpen={() => setReshuffling({ matchId: m.id, slot })}
+                                  onClose={() => setReshuffling(null)}
+                                  onPick={(playerId) => replacePlayer(m.id, slot, playerId)}
+                                />
+                                {idx === 0 && <span>&amp;</span>}
+                                {idx === 1 && (
+                                  <span className="italic text-ink-muted">vs</span>
+                                )}
+                                {idx === 2 && <span>&amp;</span>}
+                              </span>
+                            ))}
                           </p>
                           {!m.completed && (
                             <p className="mt-1 flex items-center gap-1 text-xs text-lime">
@@ -278,12 +473,64 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                             </p>
                           )}
                         </div>
-                        <div className="whitespace-nowrap font-heading text-2xl font-black tabular-nums text-lime">
-                          {m.team1Score}&ndash;{m.team2Score}
-                        </div>
+                        {editingScoreId === m.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              autoFocus
+                              type="number"
+                              value={editScores.team1}
+                              onChange={(e) =>
+                                setEditScores((s) => ({ ...s, team1: Number(e.target.value) }))
+                              }
+                              className="w-12 rounded-lg border border-lime bg-surface-low px-1 py-1 text-center font-heading text-lg font-black tabular-nums text-lime"
+                            />
+                            <span className="text-ink-muted">&ndash;</span>
+                            <input
+                              type="number"
+                              value={editScores.team2}
+                              onChange={(e) =>
+                                setEditScores((s) => ({ ...s, team2: Number(e.target.value) }))
+                              }
+                              className="w-12 rounded-lg border border-lime bg-surface-low px-1 py-1 text-center font-heading text-lg font-black tabular-nums text-lime"
+                            />
+                            <button
+                              onClick={() => saveEditScore(m.id)}
+                              disabled={savingScore}
+                              aria-label="Save score"
+                              className="ml-1 flex h-6 w-6 items-center justify-center text-lime disabled:opacity-40"
+                            >
+                              {savingScore ? (
+                                <Spinner className="text-xl" />
+                              ) : (
+                                <span className="material-symbols-outlined text-xl">check</span>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setEditingScoreId(null)}
+                              aria-label="Cancel edit"
+                              className="material-symbols-outlined text-xl text-ink-muted"
+                            >
+                              close
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => !m.completed && startEditScore(m)}
+                            disabled={m.completed}
+                            aria-label="Edit score"
+                            className="neu-inset-sm flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-heading text-2xl font-black tabular-nums text-lime disabled:opacity-100"
+                          >
+                            {m.team1Score}&ndash;{m.team2Score}
+                            {!m.completed && (
+                              <span className="material-symbols-outlined text-sm text-ink-muted">
+                                edit
+                              </span>
+                            )}
+                          </button>
+                        )}
                       </div>
 
-                      <div className="border-t border-outline/30 bg-surface-high p-3">
+                      <div className="border-t border-white/5 bg-black/10 p-3">
                         {!m.completed ? (
                           <Link
                             href={`/session/${id}/match/${m.id}`}
@@ -319,9 +566,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             disabled={generating}
             className="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline py-8 transition-colors active:scale-[0.98] disabled:opacity-40"
           >
-            <span className="material-symbols-outlined text-3xl text-outline group-active:text-lime">
-              add_circle
-            </span>
+            {generating ? (
+              <Spinner className="text-3xl text-outline" />
+            ) : (
+              <span className="material-symbols-outlined text-3xl text-outline group-active:text-lime">
+                add_circle
+              </span>
+            )}
             <span className="font-heading text-sm font-bold uppercase tracking-widest text-ink-muted group-active:text-lime">
               {generating ? "Adding..." : "Add More Matches"}
             </span>
@@ -332,15 +583,31 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       {tab === "standings" && (
         <div className="px-5 pt-4">
           <div className="mb-4 flex justify-end">
-            <button
-              onClick={nextSort}
-              className="flex items-center gap-2 rounded-full border border-outline bg-surface-low px-3 py-1.5"
-            >
-              <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                Sort: {sortBy === "sd" ? "SD" : "Score"}
+            <label className="flex items-center gap-2">
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
+                  sortBy === "score" ? "text-ink" : "text-ink-muted"
+                }`}
+              >
+                Score
               </span>
-              <span className="material-symbols-outlined text-sm text-lime">swap_vert</span>
-            </button>
+              <span className="sort-toggle">
+                <input
+                  type="checkbox"
+                  className="sort-toggle-input"
+                  checked={sortBy === "sd"}
+                  onChange={(e) => setSortBy(e.target.checked ? "sd" : "score")}
+                />
+                <span className="sort-toggle-indicator" />
+              </span>
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
+                  sortBy === "sd" ? "text-ink" : "text-ink-muted"
+                }`}
+              >
+                SD
+              </span>
+            </label>
           </div>
 
           <StandingsTable rows={standings} sortBy={sortBy} />
@@ -352,8 +619,19 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         title="End this session?"
         message="Any match still in progress gets locked in at its current score, and rounds that never started are removed."
         confirmLabel="End Session"
+        loading={ending}
         onConfirm={endSession}
         onCancel={() => setConfirmingEnd(false)}
+      />
+
+      <ConfirmModal
+        open={confirmingRebalance}
+        title="Rebalance remaining rounds?"
+        message="Every round that hasn't started yet gets deleted and regenerated using each player's current games-played and partner history — useful after swapping a player mid-session. Rounds already live or finished are untouched."
+        confirmLabel="Rebalance"
+        loading={rebalancing}
+        onConfirm={rebalanceRounds}
+        onCancel={() => setConfirmingRebalance(false)}
       />
     </main>
   );
@@ -397,7 +675,7 @@ export function StandingsTable({
   });
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-outline/30 bg-surface-low shadow-xl">
+    <div className="glass overflow-hidden rounded-2xl">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-left">
           <thead>
@@ -452,7 +730,7 @@ export function StandingsTable({
                 >
                   {r.sd > 0 ? `+${r.sd}` : r.sd}
                 </td>
-                <td className="px-2 py-3 text-center tabular-nums text-ink-muted/60">
+                <td className="px-2 py-3 text-center font-bold tabular-nums text-accent-orange">
                   {r.mBonus ? `+${r.mBonus}` : ""}
                 </td>
                 <td className="px-4 py-3 text-right font-heading text-lg font-black tabular-nums text-ink">

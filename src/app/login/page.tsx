@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Spinner } from "@/app/Spinner";
 
 function LoginForm() {
   const router = useRouter();
@@ -33,7 +34,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="glass-strong w-full max-w-sm rounded-3xl p-8">
       <header className="mb-10 flex flex-col items-center text-center">
         <span className="material-symbols-outlined mb-3 text-6xl text-lime">
           sports_tennis
@@ -57,7 +58,7 @@ function LoginForm() {
           value={passcode}
           onChange={(e) => setPasscode(e.target.value)}
           placeholder="Passcode"
-          className="w-full rounded-xl border-2 border-outline bg-surface-low px-4 py-4 text-center text-lg text-ink outline-none transition-colors focus:border-lime"
+          className="neu-inset w-full rounded-xl border border-white/5 px-4 py-4 text-center text-lg text-ink outline-none transition-colors focus:border-lime"
         />
 
         {error && <p className="text-center text-sm text-live">{error}</p>}
@@ -67,8 +68,17 @@ function LoginForm() {
           disabled={loading || !passcode}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-lime px-4 py-4 text-lg font-black text-on-lime shadow-[0_0_30px_rgba(202,243,0,0.25)] transition-transform active:scale-95 disabled:opacity-40 disabled:shadow-none"
         >
-          {loading ? "Checking..." : "Enter Gate"}
-          <span className="material-symbols-outlined text-xl">arrow_forward</span>
+          {loading ? (
+            <>
+              <Spinner className="text-xl" />
+              Checking...
+            </>
+          ) : (
+            <>
+              Enter Gate
+              <span className="material-symbols-outlined text-xl">arrow_forward</span>
+            </>
+          )}
         </button>
       </form>
     </div>
