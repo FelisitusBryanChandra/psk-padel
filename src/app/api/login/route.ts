@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AUTH_COOKIE, AUTH_MAX_AGE, passcodeToken, sessionToken } from "@/lib/auth";
+import { AUTH_COOKIE, AUTH_MAX_AGE, makeSessionToken, passcodeToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -26,20 +26,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let valid = !!passcode && passcode === process.env.APP_PASSCODE;
+  let role: "admin" | "member" | null = null;
+  let communityId: string | undefined;
 
-  if (!valid && passcode) {
+  if (passcode === process.env.APP_PASSCODE) {
+    role = "admin";
+  } else {
     const hash = await passcodeToken(passcode);
     const namedCode = await prisma.loginCode.findFirst({ where: { codeHash: hash } });
-    valid = !!namedCode;
+    if (namedCode) {
+      role = "member";
+      communityId = namedCode.communityId ?? undefined;
+    }
   }
 
-  if (!valid) {
+  if (!role) {
     await prisma.loginAttempt.create({ data: {} });
     return NextResponse.json({ error: "Wrong passcode" }, { status: 401 });
   }
 
-  const token = await sessionToken();
+  const token = await makeSessionToken({ role, communityId });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(AUTH_COOKIE, token, {
     httpOnly: true,

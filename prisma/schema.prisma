@@ -26,6 +26,16 @@ enum SessionType {
   AMERICANO
 }
 
+model Community {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+
+  loginCodes LoginCode[]
+  sessions   Session[]
+}
+
 model Session {
   id             String      @id @default(cuid())
   name           String
@@ -37,9 +47,11 @@ model Session {
   pointsPerMatch Int         @default(21)
   pointsPerServe Int         @default(5)
   createdAt      DateTime    @default(now())
+  communityId    String?
 
-  players SessionPlayer[]
-  rounds  Round[]
+  community Community?      @relation(fields: [communityId], references: [id])
+  players   SessionPlayer[]
+  rounds    Round[]
 }
 
 model SessionPlayer {
@@ -100,8 +112,11 @@ model LoginAttempt {
 }
 
 model LoginCode {
-  id        String   @id @default(cuid())
-  label     String
-  codeHash  String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  label       String
+  codeHash    String
+  createdAt   DateTime @default(now())
+  communityId String?
+
+  community Community? @relation(fields: [communityId], references: [id])
 }

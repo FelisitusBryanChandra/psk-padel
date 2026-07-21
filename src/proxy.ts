@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE, sessionToken } from "@/lib/auth";
+import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
 
 export async function proxy(req: NextRequest) {
   const cookie = req.cookies.get(AUTH_COOKIE)?.value;
-  const expected = await sessionToken();
+  const payload = await verifySessionToken(cookie);
 
-  if (cookie === expected) {
+  if (payload) {
     return NextResponse.next();
   }
 

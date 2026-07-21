@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -6,9 +8,17 @@ import { ThemeToggle } from "./ThemeToggle";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const cookieStore = await cookies();
+  const auth = await verifySessionToken(cookieStore.get(AUTH_COOKIE)?.value);
+  const isAdmin = auth?.role === "admin";
+
   const sessions = await prisma.session.findMany({
     orderBy: { date: "desc" },
-    include: { players: true, rounds: { include: { matches: true } } },
+    include: {
+      players: true,
+      rounds: { include: { matches: true } },
+      community: { select: { code: true } },
+    },
   });
 
   const groups = new Map<string, typeof sessions>();
@@ -110,7 +120,14 @@ export default async function HomePage() {
                             </span>
                           </div>
                         )}
-                        <h4 className="font-heading text-lg font-bold text-ink">{s.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-heading text-lg font-bold text-ink">{s.name}</h4>
+                          {isAdmin && s.community && (
+                            <span className="rounded-full bg-surface-highest px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                              #{s.community.code}
+                            </span>
+                          )}
+                        </div>
                         <div className="mt-1 flex items-center gap-1 text-sm text-ink-muted">
                           <span className="material-symbols-outlined text-sm">calendar_today</span>
                           {s.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}

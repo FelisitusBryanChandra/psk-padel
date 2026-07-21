@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInitialRounds } from "@/lib/rotation";
 
@@ -44,6 +45,8 @@ export async function POST(req: NextRequest) {
 
   const cleanNames = [...new Set(playerNames.map((n) => n.trim()).filter(Boolean))];
 
+  const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
+
   const session = await prisma.$transaction(async (tx) => {
     const created = await tx.session.create({
       data: {
@@ -54,6 +57,7 @@ export async function POST(req: NextRequest) {
         dynamicCourts: dynamicCourts ?? false,
         pointsPerMatch: pointsPerMatch || 21,
         pointsPerServe: pointsPerServe || 5,
+        communityId: auth?.role === "member" ? auth.communityId : undefined,
       },
     });
 
