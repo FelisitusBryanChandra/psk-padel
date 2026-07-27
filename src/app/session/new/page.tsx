@@ -223,10 +223,7 @@ export default function NewSessionPage() {
               <button
                 key={type}
                 type="button"
-                onClick={() => {
-                  setSessionType(type);
-                  if (type === "AMERICANO") setFixedPartners(false);
-                }}
+                onClick={() => setSessionType(type)}
                 className={`rounded-xl py-3 text-sm font-bold capitalize transition-colors ${
                   sessionType === type
                     ? "bg-lime text-on-lime"
@@ -239,27 +236,25 @@ export default function NewSessionPage() {
           </div>
         </div>
 
-        {sessionType === "MEXICANO" && (
-          <label className="neu-raised flex items-center justify-between rounded-xl p-3">
-            <span className="flex flex-col">
-              <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
-                Fixed Partners
-              </span>
-              <span className="text-xs text-ink-muted">
-                Lock in teams for the whole session instead of rotating partners.
-              </span>
+        <label className="neu-raised flex items-center justify-between rounded-xl p-3">
+          <span className="flex flex-col">
+            <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+              Fixed Partners
             </span>
-            <span className="sort-toggle sort-toggle-stateful">
-              <input
-                type="checkbox"
-                className="sort-toggle-input"
-                checked={fixedPartners}
-                onChange={(e) => setFixedPartners(e.target.checked)}
-              />
-              <span className="sort-toggle-indicator" />
+            <span className="text-xs text-ink-muted">
+              Lock in teams for the whole session instead of rotating partners.
             </span>
-          </label>
-        )}
+          </span>
+          <span className="sort-toggle sort-toggle-stateful">
+            <input
+              type="checkbox"
+              className="sort-toggle-input"
+              checked={fixedPartners}
+              onChange={(e) => setFixedPartners(e.target.checked)}
+            />
+            <span className="sort-toggle-indicator" />
+          </span>
+        </label>
 
         <label className="neu-raised flex items-center justify-between rounded-xl p-3">
           <span className="flex flex-col">

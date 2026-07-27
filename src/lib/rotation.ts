@@ -84,6 +84,22 @@ function computeGamesPlayed(playerIds: string[], history: HistoryRound[]): Map<s
   return gamesPlayed;
 }
 
+function teamKey(team: [string, string]): string {
+  return pairKey(team[0], team[1]);
+}
+
+function selectPlayingTeams(
+  teams: [string, string][],
+  courts: number,
+  gamesPlayed: Map<string, number>
+): [string, string][] {
+  const capacityTeams = courts * 2;
+  const ranked = shuffle(teams).sort(
+    (a, b) => (gamesPlayed.get(a[0]) ?? 0) - (gamesPlayed.get(b[0]) ?? 0)
+  );
+  return ranked.slice(0, Math.min(capacityTeams, ranked.length));
+}
+
 function computePointsSoFar(playerIds: string[], history: HistoryRound[]): Map<string, number> {
   const points = new Map<string, number>(playerIds.map((id) => [id, 0]));
   for (const round of history) {
@@ -147,6 +163,71 @@ export function planNextRound(playerIds: string[], courts: number, history: Hist
 }
 
 /**
+ * One greedy attempt at pairing playing teams against each other, preferring
+ * opponents they haven't faced yet. Mirrors attemptGroups' greedy-with-retry
+ * shape but one level up: once partners are fixed, "avoid repeat partners"
+ * has nothing left to do, so fixed-partner fairness is about avoiding
+ * repeat *opponents* instead.
+ */
+function attemptTeamMatchups(teams: [string, string][], opponentCount: Map<string, number>) {
+  const pool = shuffle(teams);
+  const groups: string[][] = [];
+  let penalty = 0;
+
+  while (pool.length >= 2) {
+    const t1 = pool.shift()!;
+    let bestIdx = 0;
+    let bestCount = Infinity;
+    for (let i = 0; i < pool.length; i++) {
+      const c = opponentCount.get(pairKey(teamKey(t1), teamKey(pool[i]))) ?? 0;
+      if (c < bestCount) {
+        bestCount = c;
+        bestIdx = i;
+      }
+    }
+    const t2 = pool.splice(bestIdx, 1)[0];
+    penalty += bestCount;
+    groups.push([...t1, ...t2]);
+  }
+
+  return { groups, penalty };
+}
+
+/**
+ * Fixed-partner Americano: teams are locked for the whole session, so
+ * pairing is about avoiding repeat *opponents* rather than repeat partners
+ * — the same anti-repeat philosophy planNextRound uses, just one level up.
+ * Sit-out fairness operates on whole teams (selectPlayingTeams), never
+ * splitting a pair between playing and sitting out.
+ */
+export function planNextFixedPartnerRound(
+  courts: number,
+  history: HistoryRound[],
+  partnerships: [string, string][]
+) {
+  const allPlayerIds = partnerships.flat();
+  const gamesPlayed = computeGamesPlayed(allPlayerIds, history);
+  const playingTeams = selectPlayingTeams(partnerships, courts, gamesPlayed);
+
+  const opponentCount = new Map<string, number>();
+  for (const round of history) {
+    for (const m of round.matches) {
+      const k1 = teamKey([m.team1Player1Id, m.team1Player2Id]);
+      const k2 = teamKey([m.team2Player1Id, m.team2Player2Id]);
+      const key = pairKey(k1, k2);
+      opponentCount.set(key, (opponentCount.get(key) ?? 0) + 1);
+    }
+  }
+
+  let best = attemptTeamMatchups(playingTeams, opponentCount);
+  for (let i = 0; i < 800 && best.penalty > 0; i++) {
+    const attempt = attemptTeamMatchups(playingTeams, opponentCount);
+    if (attempt.penalty < best.penalty) best = attempt;
+  }
+  return best.groups;
+}
+
+/**
  * Mexicano scheduling core. Unlike Americano, pairing isn't about avoiding
  * repeat partners — it's rank-based, to keep matches close: round 1 (no
  * scores yet) shuffles like Americano does, but every round after that
@@ -172,11 +253,7 @@ export function planNextMexicanoRound(
   const hasResults = history.some((round) => round.matches.some((m) => m.completed));
 
   if (fixedPartnerships.length > 0) {
-    const capacityTeams = courts * 2;
-    const rankedTeams = shuffle(fixedPartnerships).sort(
-      (a, b) => (gamesPlayed.get(a[0]) ?? 0) - (gamesPlayed.get(b[0]) ?? 0)
-    );
-    const playingTeams = rankedTeams.slice(0, Math.min(capacityTeams, rankedTeams.length));
+    const playingTeams = selectPlayingTeams(fixedPartnerships, courts, gamesPlayed);
 
     const ordered = hasResults
       ? [...playingTeams].sort((a, b) => (points.get(b[0]) ?? 0) - (points.get(a[0]) ?? 0))
@@ -218,17 +295,22 @@ export async function generateNextRound(sessionId: string) {
   });
 
   const playerIds = session.players.map((sp) => sp.playerId);
-  const groups =
-    session.sessionType === "MEXICANO"
-      ? planNextMexicanoRound(
-          playerIds,
-          session.courts,
-          session.rounds,
-          session.fixedPartners
-            ? session.fixedPartnerships.map((p): [string, string] => [p.player1Id, p.player2Id])
-            : []
-        )
-      : planNextRound(playerIds, session.courts, session.rounds);
+  const fixedPartnerships: [string, string][] = session.fixedPartners
+    ? session.fixedPartnerships.map((p) => [p.player1Id, p.player2Id])
+    : [];
+
+  let groups: string[][];
+  if (session.fixedPartners) {
+    groups =
+      session.sessionType === "MEXICANO"
+        ? planNextMexicanoRound(playerIds, session.courts, session.rounds, fixedPartnerships)
+        : planNextFixedPartnerRound(session.courts, session.rounds, fixedPartnerships);
+  } else {
+    groups =
+      session.sessionType === "MEXICANO"
+        ? planNextMexicanoRound(playerIds, session.courts, session.rounds, [])
+        : planNextRound(playerIds, session.courts, session.rounds);
+  }
 
   const nextRoundNumber = (session.rounds.at(-1)?.roundNumber ?? 0) + 1;
 
