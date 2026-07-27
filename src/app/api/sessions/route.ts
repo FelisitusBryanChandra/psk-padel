@@ -16,6 +16,9 @@ const bodySchema = z.object({
   partnerships: z.array(z.tuple([z.string().max(80), z.string().max(80)])).optional(),
   pointsPerMatch: z.number().int().min(1).max(999).optional(),
   pointsPerServe: z.number().int().min(1).max(999).optional(),
+  scoringMode: z.enum(["POINTS", "SET"]).optional(),
+  gamesPerSet: z.number().int().min(1).max(20).optional(),
+  goldenPoint: z.boolean().optional(),
   playerNames: z.array(z.string().max(80)).max(64),
 });
 
@@ -58,6 +61,9 @@ export async function POST(req: NextRequest) {
     partnerships,
     pointsPerMatch,
     pointsPerServe,
+    scoringMode,
+    gamesPerSet,
+    goldenPoint,
     playerNames,
   } = parsed.data;
 
@@ -97,6 +103,9 @@ export async function POST(req: NextRequest) {
         fixedPartners: fixedPartners ?? false,
         pointsPerMatch: pointsPerMatch || 21,
         pointsPerServe: pointsPerServe || 5,
+        scoringMode: scoringMode ?? "POINTS",
+        gamesPerSet: gamesPerSet || 4,
+        goldenPoint: goldenPoint ?? true,
         communityId: auth?.role === "member" ? auth.communityId : undefined,
       },
     });

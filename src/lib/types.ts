@@ -9,6 +9,10 @@ export type MatchDto = {
   team2Player2: PlayerRef;
   team1Score: number;
   team2Score: number;
+  team1Games: number;
+  team2Games: number;
+  team1GamePoints: number;
+  team2GamePoints: number;
   completed: boolean;
   servingTeam: number;
   team1ServerSlot: number;
@@ -25,6 +29,9 @@ export type SessionDto = {
   dynamicCourts: boolean;
   pointsPerMatch: number;
   pointsPerServe: number;
+  scoringMode: "POINTS" | "SET";
+  gamesPerSet: number;
+  goldenPoint: boolean;
   players: { player: PlayerRef }[];
   rounds: RoundDto[];
 };

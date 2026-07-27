@@ -12,7 +12,7 @@ function flipSlot(state: ServeState, team: number): ServeState {
     : { ...state, team2ServerSlot: other(state.team2ServerSlot) };
 }
 
-function flipOnce(state: ServeState, forward: boolean): ServeState {
+export function flipOnce(state: ServeState, forward: boolean): ServeState {
   if (forward) {
     const flipped = flipSlot(state, state.servingTeam);
     return { ...flipped, servingTeam: other(state.servingTeam) };

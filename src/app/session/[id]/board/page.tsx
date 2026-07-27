@@ -48,7 +48,9 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
                 </p>
               </div>
               <div className="font-heading text-xl font-black tabular-nums text-lime">
-                {m.team1Score}&ndash;{m.team2Score}
+                {session?.scoringMode === "SET"
+                  ? `${m.team1Games}–${m.team2Games}`
+                  : `${m.team1Score}–${m.team2Score}`}
               </div>
             </div>
           ))}
@@ -57,7 +59,11 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
 
       <SortToggle sortBy={sortBy} onChange={setSortBy} />
 
-      <StandingsTable rows={standings} sortBy={sortBy} />
+      <StandingsTable
+        rows={standings}
+        sortBy={sortBy}
+        scoreLabel={session?.scoringMode === "SET" ? "Games" : "Score"}
+      />
     </main>
   );
 }

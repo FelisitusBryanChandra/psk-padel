@@ -52,8 +52,10 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
         }
       };
 
-      applyTeam(team1, m.team1Score, m.team2Score);
-      applyTeam(team2, m.team2Score, m.team1Score);
+      const [team1Total, team2Total] =
+        session.scoringMode === "SET" ? [m.team1Games, m.team2Games] : [m.team1Score, m.team2Score];
+      applyTeam(team1, team1Total, team2Total);
+      applyTeam(team2, team2Total, team1Total);
     }
   }
 

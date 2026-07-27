@@ -337,17 +337,34 @@ export async function generateNextRound(sessionId: string) {
     ? session.fixedPartnerships.map((p) => [p.player1Id, p.player2Id])
     : [];
 
+  // The rotation functions only care about "how much did this team score" as
+  // an opaque ranking/anti-repeat signal — in SET mode that's games won
+  // rather than raw points, so swap the source field here rather than
+  // teaching rotation logic about scoring modes.
+  const history: HistoryRound[] = session.rounds.map((round) => ({
+    roundNumber: round.roundNumber,
+    matches: round.matches.map((m) => ({
+      team1Player1Id: m.team1Player1Id,
+      team1Player2Id: m.team1Player2Id,
+      team2Player1Id: m.team2Player1Id,
+      team2Player2Id: m.team2Player2Id,
+      team1Score: session.scoringMode === "SET" ? m.team1Games : m.team1Score,
+      team2Score: session.scoringMode === "SET" ? m.team2Games : m.team2Score,
+      completed: m.completed,
+    })),
+  }));
+
   let groups: string[][];
   if (session.fixedPartners) {
     groups =
       session.sessionType === "MEXICANO"
-        ? planNextMexicanoRound(playerIds, session.courts, session.rounds, fixedPartnerships)
-        : planNextFixedPartnerRound(session.courts, session.rounds, fixedPartnerships);
+        ? planNextMexicanoRound(playerIds, session.courts, history, fixedPartnerships)
+        : planNextFixedPartnerRound(session.courts, history, fixedPartnerships);
   } else {
     groups =
       session.sessionType === "MEXICANO"
-        ? planNextMexicanoRound(playerIds, session.courts, session.rounds, [])
-        : planNextRound(playerIds, session.courts, session.rounds);
+        ? planNextMexicanoRound(playerIds, session.courts, history, [])
+        : planNextRound(playerIds, session.courts, history);
   }
 
   const nextRoundNumber = (session.rounds.at(-1)?.roundNumber ?? 0) + 1;
@@ -381,8 +398,24 @@ export async function generateInitialRounds(sessionId: string, playerCount: numb
   }
 }
 
-function isUnstarted(m: { completed: boolean; team1Score: number; team2Score: number }) {
-  return !m.completed && m.team1Score === 0 && m.team2Score === 0;
+function isUnstarted(m: {
+  completed: boolean;
+  team1Score: number;
+  team2Score: number;
+  team1Games: number;
+  team2Games: number;
+  team1GamePoints: number;
+  team2GamePoints: number;
+}) {
+  return (
+    !m.completed &&
+    m.team1Score === 0 &&
+    m.team2Score === 0 &&
+    m.team1Games === 0 &&
+    m.team2Games === 0 &&
+    m.team1GamePoints === 0 &&
+    m.team2GamePoints === 0
+  );
 }
 
 /**

@@ -16,8 +16,11 @@ export default function NewSessionPage() {
   const [fixedPartners, setFixedPartners] = useState(false);
   const [pairs, setPairs] = useState<[string, string][]>([]);
   const [selectedForPair, setSelectedForPair] = useState<string | null>(null);
+  const [scoringMode, setScoringMode] = useState<"POINTS" | "SET">("POINTS");
   const [pointsPerMatch, setPointsPerMatch] = useState(21);
   const [pointsPerServe, setPointsPerServe] = useState(5);
+  const [gamesPerSet, setGamesPerSet] = useState(4);
+  const [goldenPoint, setGoldenPoint] = useState(true);
   const [players, setPlayers] = useState<string[]>(["", "", "", ""]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -105,8 +108,11 @@ export default function NewSessionPage() {
         sessionType,
         fixedPartners,
         partnerships: fixedPartners ? validPairs : undefined,
+        scoringMode,
         pointsPerMatch,
         pointsPerServe,
+        gamesPerSet,
+        goldenPoint,
         playerNames: cleanPlayers,
       }),
     });
@@ -188,30 +194,47 @@ export default function NewSessionPage() {
               className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
             />
           </div>
-          <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-              Max Pts
-            </span>
-            <input
-              type="number"
-              min={1}
-              value={pointsPerMatch}
-              onChange={(e) => setPointsPerMatch(Number(e.target.value))}
-              className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
-            />
-          </div>
-          <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-              Serves
-            </span>
-            <input
-              type="number"
-              min={1}
-              value={pointsPerServe}
-              onChange={(e) => setPointsPerServe(Number(e.target.value))}
-              className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
-            />
-          </div>
+          {scoringMode === "POINTS" ? (
+            <>
+              <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                  Max Pts
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={pointsPerMatch}
+                  onChange={(e) => setPointsPerMatch(Number(e.target.value))}
+                  className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
+                />
+              </div>
+              <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                  Serves
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={pointsPerServe}
+                  onChange={(e) => setPointsPerServe(Number(e.target.value))}
+                  className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="neu-raised col-span-2 flex flex-col items-center gap-1 rounded-xl p-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+                Games per Set
+              </span>
+              <input
+                type="number"
+                min={1}
+                value={gamesPerSet}
+                onChange={(e) => setGamesPerSet(Number(e.target.value))}
+                className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -235,6 +258,48 @@ export default function NewSessionPage() {
             ))}
           </div>
         </div>
+
+        <div>
+          <span className="mb-2 block text-xs font-black uppercase tracking-widest text-ink-muted">
+            Scoring
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            {(["POINTS", "SET"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setScoringMode(mode)}
+                className={`rounded-xl py-3 text-sm font-bold capitalize transition-colors ${
+                  scoringMode === mode ? "bg-lime text-on-lime" : "neu-raised text-ink-muted"
+                }`}
+              >
+                {mode === "POINTS" ? "Race to Points" : "Tennis Set"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {scoringMode === "SET" && (
+          <label className="neu-raised flex items-center justify-between rounded-xl p-3">
+            <span className="flex flex-col">
+              <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+                Golden Point
+              </span>
+              <span className="text-xs text-ink-muted">
+                At deuce, the next point wins the game outright instead of playing advantage.
+              </span>
+            </span>
+            <span className="sort-toggle sort-toggle-stateful">
+              <input
+                type="checkbox"
+                className="sort-toggle-input"
+                checked={goldenPoint}
+                onChange={(e) => setGoldenPoint(e.target.checked)}
+              />
+              <span className="sort-toggle-indicator" />
+            </span>
+          </label>
+        )}
 
         <label className="neu-raised flex items-center justify-between rounded-xl p-3">
           <span className="flex flex-col">

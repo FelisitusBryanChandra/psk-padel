@@ -3,9 +3,21 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cycleServe, nextServeState, servingPlayerId, type ServeState } from "@/lib/serve";
+import { applyPoint, isTiebreak, pointLabel } from "@/lib/tennisScore";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
-import type { MatchDto } from "@/lib/types";
+import type { MatchDto, SessionDto } from "@/lib/types";
+
+type LiveState = {
+  team1Score: number;
+  team2Score: number;
+  team1Games: number;
+  team2Games: number;
+  team1GamePoints: number;
+  team2GamePoints: number;
+} & ServeState;
+
+type SessionConfig = Pick<SessionDto, "pointsPerServe" | "scoringMode" | "gamesPerSet" | "goldenPoint">;
 
 export default function ScoreboardPage({
   params,
@@ -16,10 +28,14 @@ export default function ScoreboardPage({
   const router = useRouter();
 
   const [match, setMatch] = useState<MatchDto | null>(null);
-  const [pointsPerServe, setPointsPerServe] = useState(5);
-  const [live, setLive] = useState<{ team1Score: number; team2Score: number } & ServeState>({
+  const [session, setSession] = useState<SessionConfig | null>(null);
+  const [live, setLive] = useState<LiveState>({
     team1Score: 0,
     team2Score: 0,
+    team1Games: 0,
+    team2Games: 0,
+    team1GamePoints: 0,
+    team2GamePoints: 0,
     servingTeam: 1,
     team1ServerSlot: 1,
     team2ServerSlot: 1,
@@ -31,16 +47,23 @@ export default function ScoreboardPage({
   useEffect(() => {
     fetch(`/api/sessions/${id}`)
       .then((r) => r.json())
-      .then((session) => {
-        setPointsPerServe(session.pointsPerServe);
-        const found: MatchDto | undefined = session.rounds
-          .flatMap((r: { matches: MatchDto[] }) => r.matches)
-          .find((m: MatchDto) => m.id === matchId);
+      .then((data: SessionDto) => {
+        setSession({
+          pointsPerServe: data.pointsPerServe,
+          scoringMode: data.scoringMode,
+          gamesPerSet: data.gamesPerSet,
+          goldenPoint: data.goldenPoint,
+        });
+        const found = data.rounds.flatMap((r) => r.matches).find((m) => m.id === matchId);
         if (found) {
           setMatch(found);
           setLive({
             team1Score: found.team1Score,
             team2Score: found.team2Score,
+            team1Games: found.team1Games,
+            team2Games: found.team2Games,
+            team1GamePoints: found.team1GamePoints,
+            team2GamePoints: found.team2GamePoints,
             servingTeam: found.servingTeam,
             team1ServerSlot: found.team1ServerSlot,
             team2ServerSlot: found.team2ServerSlot,
@@ -55,37 +78,64 @@ export default function ScoreboardPage({
       const team2Score = team === 2 ? Math.max(0, prev.team2Score + delta) : prev.team2Score;
       const prevTotal = prev.team1Score + prev.team2Score;
       const newTotal = team1Score + team2Score;
-      const serve = nextServeState(prev, prevTotal, newTotal, pointsPerServe);
+      const serve = nextServeState(prev, prevTotal, newTotal, session?.pointsPerServe ?? 5);
       // `serve` may just be `prev` unchanged (including its old scores) when
       // no boundary was crossed, so it must spread BEFORE the fresh scores
       // or it'll clobber them back to the old values.
-      return { ...serve, team1Score, team2Score };
+      return { ...prev, ...serve, team1Score, team2Score };
     });
   }
 
+  function scorePoint(team: 1 | 2) {
+    if (!session) return;
+    setLive((prev) => ({
+      ...prev,
+      ...applyPoint(prev, team, { gamesPerSet: session.gamesPerSet, goldenPoint: session.goldenPoint }),
+    }));
+  }
+
   async function finish() {
-    if (!match) return;
+    if (!match || !session) return;
     setFinishing(true);
+    const body =
+      session.scoringMode === "SET"
+        ? { team1Games: live.team1Games, team2Games: live.team2Games }
+        : { team1Score: live.team1Score, team2Score: live.team2Score };
     await fetch(`/api/matches/${match.id}/finalize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team1Score: live.team1Score, team2Score: live.team2Score }),
+      body: JSON.stringify(body),
     });
     router.back();
   }
 
   async function saveProgress() {
-    if (!match) return;
+    if (!match || !session) return;
     setUpdating(true);
+    const serveFields = {
+      servingTeam: live.servingTeam,
+      team1ServerSlot: live.team1ServerSlot,
+      team2ServerSlot: live.team2ServerSlot,
+    };
+    const body =
+      session.scoringMode === "SET"
+        ? {
+            team1Games: live.team1Games,
+            team2Games: live.team2Games,
+            team1GamePoints: live.team1GamePoints,
+            team2GamePoints: live.team2GamePoints,
+            ...serveFields,
+          }
+        : { team1Score: live.team1Score, team2Score: live.team2Score, ...serveFields };
     await fetch(`/api/matches/${match.id}/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(live),
+      body: JSON.stringify(body),
     });
     setUpdating(false);
   }
 
-  if (!match) {
+  if (!match || !session) {
     return <LoadingModal open />;
   }
 
@@ -96,7 +146,9 @@ export default function ScoreboardPage({
           This match is already finished
         </p>
         <p className="font-heading text-4xl font-black text-ink">
-          {match.team1Score}&ndash;{match.team2Score}
+          {session.scoringMode === "SET"
+            ? `${match.team1Games}–${match.team2Games}`
+            : `${match.team1Score}–${match.team2Score}`}
         </p>
         <button
           onClick={() => router.back()}
@@ -114,6 +166,9 @@ export default function ScoreboardPage({
     team2Player1Id: match.team2Player1.id,
     team2Player2Id: match.team2Player2.id,
   });
+
+  const setMode = session.scoringMode === "SET";
+  const tiebreakNow = setMode && isTiebreak(live, session.gamesPerSet);
 
   return (
     <main className="landscape-force flex min-h-dvh flex-col bg-bg px-6 py-4">
@@ -139,7 +194,7 @@ export default function ScoreboardPage({
         </span>
         <span className="flex items-center gap-1 rounded-full bg-live-bg/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-live">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
-          Live
+          {tiebreakNow ? "Tiebreak" : "Live"}
         </span>
       </div>
 
@@ -151,6 +206,18 @@ export default function ScoreboardPage({
               : `${match.team1Player1.name} & ${match.team1Player2.name}`
           }
           score={swapped ? live.team2Score : live.team1Score}
+          setMode={setMode}
+          pointLabelText={
+            setMode
+              ? pointLabel(
+                  swapped ? live.team2GamePoints : live.team1GamePoints,
+                  swapped ? live.team1GamePoints : live.team2GamePoints,
+                  tiebreakNow,
+                  session.goldenPoint
+                )
+              : undefined
+          }
+          gamesWon={setMode ? (swapped ? live.team2Games : live.team1Games) : undefined}
           serving={
             swapped
               ? server === match.team2Player1.id || server === match.team2Player2.id
@@ -158,6 +225,7 @@ export default function ScoreboardPage({
           }
           onServe={() => setLive((prev) => ({ ...prev, ...cycleServe(prev) }))}
           onAdjust={(d) => adjust(swapped ? 2 : 1, d)}
+          onScorePoint={() => scorePoint(swapped ? 2 : 1)}
         />
         <div className="h-32 w-px bg-outline/30" />
         <TeamPanel
@@ -167,6 +235,18 @@ export default function ScoreboardPage({
               : `${match.team2Player1.name} & ${match.team2Player2.name}`
           }
           score={swapped ? live.team1Score : live.team2Score}
+          setMode={setMode}
+          pointLabelText={
+            setMode
+              ? pointLabel(
+                  swapped ? live.team1GamePoints : live.team2GamePoints,
+                  swapped ? live.team2GamePoints : live.team1GamePoints,
+                  tiebreakNow,
+                  session.goldenPoint
+                )
+              : undefined
+          }
+          gamesWon={setMode ? (swapped ? live.team1Games : live.team2Games) : undefined}
           serving={
             swapped
               ? server === match.team1Player1.id || server === match.team1Player2.id
@@ -174,6 +254,7 @@ export default function ScoreboardPage({
           }
           onServe={() => setLive((prev) => ({ ...prev, ...cycleServe(prev) }))}
           onAdjust={(d) => adjust(swapped ? 1 : 2, d)}
+          onScorePoint={() => scorePoint(swapped ? 1 : 2)}
         />
       </div>
 
@@ -205,12 +286,20 @@ function TeamPanel({
   serving,
   onServe,
   onAdjust,
+  setMode,
+  pointLabelText,
+  gamesWon,
+  onScorePoint,
 }: {
   name: string;
   score: number;
   serving: boolean;
   onServe: () => void;
   onAdjust: (delta: 1 | -1) => void;
+  setMode: boolean;
+  pointLabelText?: string;
+  gamesWon?: number;
+  onScorePoint: () => void;
 }) {
   return (
     <div
@@ -245,23 +334,37 @@ function TeamPanel({
       >
         {name}
       </p>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => onAdjust(-1)}
-          className="neu-raised flex h-11 w-11 items-center justify-center rounded-full text-ink-muted transition-shadow active:shadow-none"
-        >
-          <span className="material-symbols-outlined">remove</span>
-        </button>
-        <span className="neu-inset w-24 rounded-2xl py-1 text-center font-heading text-6xl font-black tabular-nums text-lime">
-          {score}
-        </span>
-        <button
-          onClick={() => onAdjust(1)}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-lime text-on-lime shadow-md shadow-lime/20 active:scale-90 transition-transform"
-        >
-          <span className="material-symbols-outlined">add</span>
-        </button>
-      </div>
+      {setMode ? (
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-ink-muted">
+            Games: {gamesWon}
+          </span>
+          <button
+            onClick={onScorePoint}
+            className="neu-inset flex w-28 items-center justify-center rounded-2xl py-3 text-center font-heading text-3xl font-black tabular-nums text-lime transition-transform active:scale-95"
+          >
+            {pointLabelText}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onAdjust(-1)}
+            className="neu-raised flex h-11 w-11 items-center justify-center rounded-full text-ink-muted transition-shadow active:shadow-none"
+          >
+            <span className="material-symbols-outlined">remove</span>
+          </button>
+          <span className="neu-inset w-24 rounded-2xl py-1 text-center font-heading text-6xl font-black tabular-nums text-lime">
+            {score}
+          </span>
+          <button
+            onClick={() => onAdjust(1)}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-lime text-on-lime shadow-md shadow-lime/20 active:scale-90 transition-transform"
+          >
+            <span className="material-symbols-outlined">add</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

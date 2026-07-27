@@ -176,15 +176,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
   function startEditScore(m: MatchDto) {
     setEditingScoreId(m.id);
-    setEditScores({ team1: m.team1Score, team2: m.team2Score });
+    setEditScores(
+      session?.scoringMode === "SET"
+        ? { team1: m.team1Games, team2: m.team2Games }
+        : { team1: m.team1Score, team2: m.team2Score }
+    );
   }
 
   async function saveEditScore(matchId: string) {
     setSavingScore(true);
+    const body =
+      session?.scoringMode === "SET"
+        ? { team1Games: editScores.team1, team2Games: editScores.team2 }
+        : { team1Score: editScores.team1, team2Score: editScores.team2 };
     await fetch(`/api/matches/${matchId}/finalize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team1Score: editScores.team1, team2Score: editScores.team2 }),
+      body: JSON.stringify(body),
     });
     setSavingScore(false);
     setEditingScoreId(null);
@@ -261,7 +269,10 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   {session.courts} court{session.courts > 1 ? "s" : ""}
                 </span>
               )}{" "}
-              &middot; to {session.pointsPerMatch}, serve/{session.pointsPerServe}
+              &middot;{" "}
+              {session.scoringMode === "SET"
+                ? `${session.gamesPerSet} games/set${session.goldenPoint ? ", golden point" : ""}`
+                : `to ${session.pointsPerMatch}, serve/${session.pointsPerServe}`}
             </p>
           </div>
           <ThemeToggle />
@@ -506,7 +517,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                             aria-label="Edit score"
                             className="neu-inset-sm flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-heading text-2xl font-black tabular-nums text-lime disabled:opacity-100"
                           >
-                            {m.team1Score}&ndash;{m.team2Score}
+                            {session.scoringMode === "SET"
+                              ? `${m.team1Games}–${m.team2Games}`
+                              : `${m.team1Score}–${m.team2Score}`}
                             {!m.completed && (
                               <span className="material-symbols-outlined text-sm text-ink-muted">
                                 edit
@@ -570,7 +583,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         <div className="px-5 pt-4">
           <SortToggle sortBy={sortBy} onChange={setSortBy} />
 
-          <StandingsTable rows={standings} sortBy={sortBy} />
+          <StandingsTable
+            rows={standings}
+            sortBy={sortBy}
+            scoreLabel={session.scoringMode === "SET" ? "Games" : "Score"}
+          />
         </div>
       )}
 

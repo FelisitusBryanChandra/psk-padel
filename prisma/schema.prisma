@@ -29,6 +29,11 @@ enum SessionType {
   MEXICANO
 }
 
+enum ScoringMode {
+  POINTS
+  SET
+}
+
 model Community {
   id        String   @id @default(cuid())
   name      String
@@ -50,6 +55,9 @@ model Session {
   courtName      String?
   pointsPerMatch Int         @default(21)
   pointsPerServe Int         @default(5)
+  scoringMode    ScoringMode @default(POINTS)
+  gamesPerSet    Int         @default(4)
+  goldenPoint    Boolean     @default(true)
   createdAt      DateTime    @default(now())
   communityId    String?
 
@@ -104,6 +112,15 @@ model Match {
 
   team1Score Int @default(0)
   team2Score Int @default(0)
+
+  // SET scoring mode only (session.scoringMode === SET): games won so far,
+  // and the raw point count within the game currently being played. A
+  // tiebreak isn't stored separately — it's detected on the fly whenever
+  // both team1Games/team2Games equal session.gamesPerSet - 1.
+  team1Games      Int @default(0)
+  team2Games      Int @default(0)
+  team1GamePoints Int @default(0)
+  team2GamePoints Int @default(0)
 
   completed Boolean @default(false)
 

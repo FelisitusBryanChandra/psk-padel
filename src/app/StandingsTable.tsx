@@ -14,9 +14,11 @@ const MEDAL_STYLE = [
 export function StandingsTable({
   rows,
   sortBy,
+  scoreLabel = "Score",
 }: {
   rows: StandingRow[];
   sortBy: "sd" | "score";
+  scoreLabel?: string;
 }) {
   const sorted = sortStandings(rows, sortBy);
 
@@ -55,7 +57,7 @@ export function StandingsTable({
                 +M
               </th>
               <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                Score
+                {scoreLabel}
               </th>
             </tr>
           </thead>
