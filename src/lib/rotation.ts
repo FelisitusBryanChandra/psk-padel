@@ -228,13 +228,35 @@ export function planNextFixedPartnerRound(
 }
 
 /**
- * Mexicano scheduling core. Unlike Americano, pairing isn't about avoiding
- * repeat partners — it's rank-based, to keep matches close: round 1 (no
- * scores yet) shuffles like Americano does, but every round after that
- * ranks the playing group by points scored so far and, within each block of
- * four, pairs rank 1 with rank 4 against rank 2 with rank 3 (the standard
- * Mexicano rule — keeps a strong/weak pairing on each side of the net
- * instead of stacking the two strongest together).
+ * Within one rank-block of 4 (already sorted best to worst), pairs rank 1
+ * with rank 4 against rank 2 with rank 3 — the standard Mexicano rule, and
+ * the one that keeps that match closest (it splits the score gap evenly
+ * across both teams). 1-3/2-4 is the other pairing real Mexicano tools use;
+ * it's a bit less balanced but still reasonable. 1-2/3-4 (stacking the two
+ * strongest together) isn't a real variant anywhere and is deliberately
+ * left out — it produces the most lopsided match of the three.
+ */
+function mexicanoBlockSplits(
+  rank1: string,
+  rank2: string,
+  rank3: string,
+  rank4: string
+): { team1: [string, string]; team2: [string, string] }[] {
+  return [
+    { team1: [rank1, rank4], team2: [rank2, rank3] },
+    { team1: [rank1, rank3], team2: [rank2, rank4] },
+  ];
+}
+
+/**
+ * Mexicano scheduling core. Round 1 (no scores yet) shuffles like Americano
+ * does; every round after that ranks the playing group by points scored so
+ * far and pairs off each block of four by rank. Unlike Americano, pairing
+ * isn't primarily about avoiding repeat partners — it's rank-based, to keep
+ * matches close — but real Mexicano tools still track partner history and
+ * avoid repeats where they can: for each block, the standard 1-4/2-3 split
+ * is used unless it would repeat a partnership from earlier in the session,
+ * in which case the 1-3/2-4 split is used instead.
  *
  * Fixed partnerships skip individual pairing entirely: a `[playerId,
  * playerId]` tuple is a locked team, so fairness and ranking both operate
@@ -276,10 +298,26 @@ export function planNextMexicanoRound(
     ? [...playing].sort((a, b) => (points.get(b) ?? 0) - (points.get(a) ?? 0))
     : shuffle(playing);
 
+  const partnerCount = new Map<string, number>();
+  for (const round of history) {
+    for (const m of round.matches) {
+      const k1 = pairKey(m.team1Player1Id, m.team1Player2Id);
+      const k2 = pairKey(m.team2Player1Id, m.team2Player2Id);
+      partnerCount.set(k1, (partnerCount.get(k1) ?? 0) + 1);
+      partnerCount.set(k2, (partnerCount.get(k2) ?? 0) + 1);
+    }
+  }
+
   const groups: string[][] = [];
   for (let i = 0; i + 4 <= ordered.length; i += 4) {
     const [rank1, rank2, rank3, rank4] = ordered.slice(i, i + 4);
-    groups.push([rank1, rank4, rank2, rank3]);
+    const splits = mexicanoBlockSplits(rank1, rank2, rank3, rank4);
+    const best = splits.reduce((a, b) => {
+      const penaltyA = (partnerCount.get(pairKey(...a.team1)) ?? 0) + (partnerCount.get(pairKey(...a.team2)) ?? 0);
+      const penaltyB = (partnerCount.get(pairKey(...b.team1)) ?? 0) + (partnerCount.get(pairKey(...b.team2)) ?? 0);
+      return penaltyB < penaltyA ? b : a;
+    });
+    groups.push([...best.team1, ...best.team2]);
   }
   return groups;
 }

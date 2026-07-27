@@ -1,19 +1,5 @@
 import { prisma } from "@/lib/prisma";
-
-export type StandingRow = {
-  playerId: string;
-  name: string;
-  played: number;
-  wins: number;
-  ties: number;
-  losses: number;
-  pointsFor: number;
-  pointsAgainst: number;
-  sd: number;
-  missedRounds: number;
-  mBonus: number;
-  score: number;
-};
+import type { StandingRow } from "@/lib/types";
 
 export async function computeStandings(sessionId: string): Promise<StandingRow[]> {
   const session = await prisma.session.findUniqueOrThrow({
@@ -81,12 +67,4 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
   }
 
   return Array.from(rows.values());
-}
-
-export function sortStandings(rows: StandingRow[], by: "sd" | "score"): StandingRow[] {
-  return [...rows].sort((a, b) => {
-    const primary = by === "sd" ? b.sd - a.sd : b.score - a.score;
-    if (primary !== 0) return primary;
-    return b.score - a.score || b.wins - a.wins;
-  });
 }

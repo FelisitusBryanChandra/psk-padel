@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { findOrCreatePlayer } from "@/lib/player";
 
 const bodySchema = z.object({ newName: z.string().trim().min(1).max(80) });
 
@@ -16,10 +17,7 @@ export async function POST(
   const cleanName = parsed.data.newName;
 
   await prisma.$transaction(async (tx) => {
-    let newPlayer = await tx.player.findFirst({ where: { name: cleanName } });
-    if (!newPlayer) {
-      newPlayer = await tx.player.create({ data: { name: cleanName } });
-    }
+    const newPlayer = await findOrCreatePlayer(tx, cleanName);
 
     const notStarted = { completed: false, team1Score: 0, team2Score: 0 };
     for (const field of [

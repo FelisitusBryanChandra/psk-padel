@@ -4,6 +4,11 @@ export const AUTH_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
 export type AuthRole = "admin" | "member";
 export type AuthPayload = { role: AuthRole; communityId?: string };
 
+/** Members only see their own community's sessions; admins see everything. */
+export function communityFilter(auth: AuthPayload | null): { communityId?: string | null } {
+  return auth?.role === "member" ? { communityId: auth.communityId ?? null } : {};
+}
+
 async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
   const digest = await crypto.subtle.digest("SHA-256", data);

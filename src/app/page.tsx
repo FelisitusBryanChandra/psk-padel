@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
+import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -13,6 +13,7 @@ export default async function HomePage() {
   const isAdmin = auth?.role === "admin";
 
   const sessions = await prisma.session.findMany({
+    where: communityFilter(auth),
     orderBy: { date: "desc" },
     include: {
       players: true,
@@ -57,7 +58,7 @@ export default async function HomePage() {
       <section className="mb-6">
         <h2 className="font-heading text-2xl font-black text-ink">Your Sessions</h2>
         <p className="mt-1 text-sm text-ink-muted">
-          Manage and track your Padel Americano tournaments.
+          Manage and track your Padel Americano and Mexicano tournaments.
         </p>
       </section>
 

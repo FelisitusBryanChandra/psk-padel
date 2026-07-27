@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
+import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInitialRounds } from "@/lib/rotation";
+import { findOrCreatePlayer } from "@/lib/player";
 
 const bodySchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -18,8 +19,11 @@ const bodySchema = z.object({
   playerNames: z.array(z.string().max(80)).max(64),
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
+
   const sessions = await prisma.session.findMany({
+    where: communityFilter(auth),
     orderBy: { date: "desc" },
     include: { players: { include: { player: true } }, rounds: true },
   });
@@ -99,10 +103,7 @@ export async function POST(req: NextRequest) {
 
     const nameToPlayerId = new Map<string, string>();
     for (const playerName of cleanNames) {
-      let player = await tx.player.findFirst({ where: { name: playerName } });
-      if (!player) {
-        player = await tx.player.create({ data: { name: playerName } });
-      }
+      const player = await findOrCreatePlayer(tx, playerName);
       nameToPlayerId.set(playerName, player.id);
       await tx.sessionPlayer.create({
         data: { sessionId: created.id, playerId: player.id },

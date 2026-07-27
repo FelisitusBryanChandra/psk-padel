@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
 
 function csvEscape(value: string) {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
@@ -16,8 +17,10 @@ export async function GET(req: NextRequest) {
   const start = new Date(year, mon - 1, 1);
   const end = new Date(year, mon, 1);
 
+  const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
+
   const sessions = await prisma.session.findMany({
-    where: { date: { gte: start, lt: end } },
+    where: { date: { gte: start, lt: end }, ...communityFilter(auth) },
     orderBy: { date: "asc" },
     include: {
       rounds: {

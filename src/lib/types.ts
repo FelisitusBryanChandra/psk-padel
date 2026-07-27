@@ -36,8 +36,18 @@ export type StandingRow = {
   wins: number;
   ties: number;
   losses: number;
+  pointsFor: number;
+  pointsAgainst: number;
   sd: number;
   missedRounds: number;
   mBonus: number;
   score: number;
 };
+
+export function sortStandings(rows: StandingRow[], by: "sd" | "score"): StandingRow[] {
+  return [...rows].sort((a, b) => {
+    const primary = by === "sd" ? b.sd - a.sd : b.score - a.score;
+    if (primary !== 0) return primary;
+    return b.score - a.score || b.wins - a.wins;
+  });
+}
