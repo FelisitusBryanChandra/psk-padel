@@ -14,7 +14,7 @@ For a local Postgres, `npx prisma dev --name <project>` works, but run it as a *
 ## Deploying to Vercel + Neon
 
 1. Create a free Neon Postgres database, copy its connection string into the Vercel project's `DATABASE_URL` env var.
-2. Set `APP_PASSCODE` (shared passcode for login), `CRON_SECRET` (any random string — Vercel sends it automatically as a bearer token when it calls the daily cleanup cron), and `NAMED_LOGIN_CODES` (format `"Name:code,Name:code"` — per-person login codes) as Vercel env vars.
+2. Set `APP_PASSCODE` (shared passcode for login) and `CRON_SECRET` (any random string — Vercel sends it automatically as a bearer token when it calls the daily cleanup cron) as Vercel env vars.
 3. Run `npx prisma db push` once against the Neon `DATABASE_URL` to create the schema.
 4. Seed the named login codes once: `curl -X POST https://<your-domain>/api/admin/seed-login-codes -H "Authorization: Bearer $CRON_SECRET"`.
 5. Deploy. `vercel.json` already schedules `/api/cron/cleanup` daily — it deletes any session older than 30 days.
