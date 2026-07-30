@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/app/Spinner";
+import { Logo } from "@/app/Logo";
 
 function LoginForm() {
   const router = useRouter();
@@ -36,9 +37,7 @@ function LoginForm() {
   return (
     <div className="glass-strong w-full max-w-sm rounded-3xl p-8">
       <header className="mb-10 flex flex-col items-center text-center">
-        <span className="material-symbols-outlined mb-3 text-6xl text-lime">
-          sports_tennis
-        </span>
+        <Logo className="mb-3 h-16 w-auto text-lime" />
         <h1 className="font-heading text-3xl font-black italic uppercase tracking-tight text-ink">
           PSK Padel
         </h1>
