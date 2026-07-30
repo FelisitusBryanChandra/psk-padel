@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DeleteSessionButton } from "./DeleteSessionButton";
+import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export default async function HomePage() {
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4">
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-3xl text-ink">sports_tennis</span>
+          <Logo className="h-8 w-auto text-ink" />
           <h1 className="font-heading text-2xl font-black tracking-tight text-ink">PSK Padel</h1>
         </div>
         <div className="flex items-center gap-2">
