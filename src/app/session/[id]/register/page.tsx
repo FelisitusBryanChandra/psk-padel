@@ -61,7 +61,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
   const isOpen = session.rounds.length === 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28 md:max-w-xl lg:max-w-2xl">
       <header className="glass sticky top-0 z-10 flex items-center gap-3 px-5 py-4">
         <Link href={`/session/${id}`} className="material-symbols-outlined text-ink" aria-label="Back">
           arrow_back

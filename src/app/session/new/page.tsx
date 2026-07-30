@@ -130,7 +130,7 @@ export default function NewSessionPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28 md:max-w-xl lg:max-w-2xl">
       <header className="glass sticky top-0 z-10 flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
           <Logo className="h-6 w-auto text-ink" />
@@ -456,7 +456,7 @@ export default function NewSessionPage() {
           {error && <p className="text-sm text-live">{error}</p>}
         </div>
 
-        <div className="glass-strong fixed bottom-0 left-1/2 z-10 w-full max-w-md -translate-x-1/2 px-5 py-4">
+        <div className="glass-strong fixed bottom-0 left-1/2 z-10 w-full max-w-md -translate-x-1/2 px-5 py-4 md:max-w-xl lg:max-w-2xl">
           <button
             type="submit"
             disabled={loading}
