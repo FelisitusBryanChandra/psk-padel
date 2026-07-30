@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Spinner } from "@/app/Spinner";
+import { Logo } from "@/app/Logo";
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -132,7 +133,7 @@ export default function NewSessionPage() {
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28">
       <header className="glass sticky top-0 z-10 flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-2xl text-ink">sports_tennis</span>
+          <Logo className="h-6 w-auto text-ink" />
           <h1 className="font-heading text-xl font-black tracking-tight text-ink">PSK Padel</h1>
         </div>
         <Link href="/" className="material-symbols-outlined text-ink-muted" aria-label="Close">

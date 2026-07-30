@@ -4,6 +4,7 @@ import { use, useState } from "react";
 import { StandingsTable } from "@/app/StandingsTable";
 import { SortToggle } from "@/app/SortToggle";
 import { useSessionData } from "@/app/useSessionData";
+import { Logo } from "@/app/Logo";
 
 export default function BoardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -17,7 +18,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col bg-bg px-6 py-10">
       <div className="mb-8 flex flex-col items-center gap-2 text-center">
-        <span className="material-symbols-outlined text-4xl text-lime">sports_tennis</span>
+        <Logo className="h-9 w-auto text-lime" />
         <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-ink">
           {session?.name || "PSK Padel"}
         </h1>
