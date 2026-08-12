@@ -1,4 +1,4 @@
-import { sortStandings, type StandingRow } from "@/lib/types";
+import { computeRanks, sortStandings, type StandingRow } from "@/lib/types";
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -22,18 +22,7 @@ export function StandingsTable({
 }) {
   const sorted = sortStandings(rows, sortBy);
 
-  // Standard competition ranking: ties on the active sort key share a rank,
-  // and the next distinct value skips ahead accordingly (1, 1, 3).
-  const ranks: number[] = [];
-  sorted.forEach((r, idx) => {
-    if (idx === 0) {
-      ranks.push(1);
-      return;
-    }
-    const prev = sorted[idx - 1];
-    const tied = sortBy === "sd" ? r.sd === prev.sd : r.score === prev.score;
-    ranks.push(tied ? ranks[idx - 1] : idx + 1);
-  });
+  const ranks = computeRanks(sorted, sortBy);
 
   return (
     <div className="glass overflow-hidden rounded-2xl">

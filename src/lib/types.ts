@@ -24,6 +24,7 @@ export type RoundDto = { id: string; roundNumber: number; matches: MatchDto[] };
 export type SessionDto = {
   id: string;
   name: string;
+  date: string;
   courtName: string | null;
   courts: number;
   dynamicCourts: boolean;
@@ -57,4 +58,23 @@ export function sortStandings(rows: StandingRow[], by: "sd" | "score"): Standing
     if (primary !== 0) return primary;
     return b.score - a.score || b.wins - a.wins;
   });
+}
+
+/**
+ * Standard competition ranking over an already-sorted list: ties on the active
+ * sort key share a rank, and the next distinct value skips ahead accordingly
+ * (1, 1, 3). Shared so the on-screen table and the exported image agree.
+ */
+export function computeRanks(sorted: StandingRow[], by: "sd" | "score"): number[] {
+  const ranks: number[] = [];
+  sorted.forEach((r, idx) => {
+    if (idx === 0) {
+      ranks.push(1);
+      return;
+    }
+    const prev = sorted[idx - 1];
+    const tied = by === "sd" ? r.sd === prev.sd : r.score === prev.score;
+    ranks.push(tied ? ranks[idx - 1] : idx + 1);
+  });
+  return ranks;
 }

@@ -8,6 +8,7 @@ import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
 import { StandingsTable } from "@/app/StandingsTable";
 import { SortToggle } from "@/app/SortToggle";
+import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import type { PlayerRef, MatchDto } from "@/lib/types";
 
@@ -581,7 +582,16 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
       {tab === "standings" && (
         <div className="px-5 pt-4">
-          <SortToggle sortBy={sortBy} onChange={setSortBy} />
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <ExportStandingsButton
+              rows={standings}
+              sortBy={sortBy}
+              scoreLabel={session.scoringMode === "SET" ? "Games" : "Score"}
+              sessionName={session.name}
+              sessionDate={session.date}
+            />
+            <SortToggle sortBy={sortBy} onChange={setSortBy} />
+          </div>
 
           <StandingsTable
             rows={standings}
