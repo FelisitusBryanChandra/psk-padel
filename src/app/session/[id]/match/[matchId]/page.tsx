@@ -6,6 +6,7 @@ import { cycleServe, nextServeState, servingPlayerId, type ServeState } from "@/
 import { applyPoint, isTiebreak, pointLabel } from "@/lib/tennisScore";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
+import { rememberFinishedMatch } from "@/lib/lastFinishedMatch";
 import type { MatchDto, SessionDto } from "@/lib/types";
 
 type LiveState = {
@@ -106,6 +107,7 @@ export default function ScoreboardPage({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    rememberFinishedMatch(match.id);
     router.back();
   }
 

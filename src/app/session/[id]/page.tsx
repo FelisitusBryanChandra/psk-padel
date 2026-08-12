@@ -10,6 +10,7 @@ import { StandingsTable } from "@/app/StandingsTable";
 import { SortToggle } from "@/app/SortToggle";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
+import { takeFinishedMatch } from "@/lib/lastFinishedMatch";
 import type { PlayerRef, MatchDto } from "@/lib/types";
 
 function servingPlayer(m: MatchDto): PlayerRef {
@@ -68,6 +69,8 @@ function PlayerChip({
   );
 }
 
+const matchAnchorId = (matchId: string) => `match-${matchId}`;
+
 function hasLiveMatch(session: { rounds: { matches: { completed: boolean }[] }[] } | null) {
   return session?.rounds.at(-1)?.matches.some((m) => !m.completed) ?? false;
 }
@@ -97,6 +100,20 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     null
   );
   const chipRowRef = useRef<HTMLDivElement>(null);
+
+  // Coming back from the scoreboard, scroll to the match just finished. The
+  // browser can't restore this itself: the list is fetched client-side, so at
+  // restoration time the page is still the loading modal. Runs once per finish
+  // -- takeFinishedMatch() clears the target as it reads it.
+  const hasMatches = !!session && session.rounds.length > 0;
+  useEffect(() => {
+    if (!hasMatches) return;
+    const matchId = takeFinishedMatch();
+    if (!matchId) return;
+    document
+      .getElementById(matchAnchorId(matchId))
+      ?.scrollIntoView({ block: "center" });
+  }, [hasMatches]);
 
   // Mouse wheel has no horizontal axis, and the strip's scrollbar is hidden,
   // so without this a mouse-only (non-touch, non-trackpad) user has no way
@@ -425,6 +442,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   return (
                     <div
                       key={m.id}
+                      id={matchAnchorId(m.id)}
                       className="glass overflow-hidden rounded-xl"
                     >
                       <div className="flex items-start justify-between p-4">
