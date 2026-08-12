@@ -28,6 +28,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The theme-no-flash script below stamps `light` onto <html> before
+      // hydration, so this one element is expected to differ from the server.
+      suppressHydrationWarning
       className={`${montserrat.variable} ${rubik.variable} h-full antialiased`}
     >
       <head>
