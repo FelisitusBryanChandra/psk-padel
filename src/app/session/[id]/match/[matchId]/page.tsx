@@ -44,6 +44,10 @@ export default function ScoreboardPage({
   const [finishing, setFinishing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [swapped, setSwapped] = useState(false);
+  // Snapshots taken before each awarded point. A tennis point can't be undone
+  // by decrementing: it may have rolled a game (points reset, games +1, serve
+  // flipped) or closed the set, so only the whole prior state restores it.
+  const [pointHistory, setPointHistory] = useState<LiveState[]>([]);
 
   useEffect(() => {
     fetch(`/api/sessions/${id}`)
@@ -89,10 +93,18 @@ export default function ScoreboardPage({
 
   function scorePoint(team: 1 | 2) {
     if (!session) return;
+    setPointHistory((h) => [...h, live]);
     setLive((prev) => ({
       ...prev,
       ...applyPoint(prev, team, { gamesPerSet: session.gamesPerSet, goldenPoint: session.goldenPoint }),
     }));
+  }
+
+  function undoPoint() {
+    const previous = pointHistory.at(-1);
+    if (!previous) return;
+    setLive(previous);
+    setPointHistory((h) => h.slice(0, -1));
   }
 
   async function finish() {
@@ -259,6 +271,17 @@ export default function ScoreboardPage({
           onScorePoint={() => scorePoint(swapped ? 1 : 2)}
         />
       </div>
+
+      {setMode && (
+        <button
+          onClick={undoPoint}
+          disabled={pointHistory.length === 0}
+          className="mb-3 flex items-center justify-center gap-2 self-center rounded-full border border-outline px-4 py-2 text-xs font-black uppercase tracking-widest text-ink-muted transition-colors active:scale-95 disabled:opacity-30"
+        >
+          <span className="material-symbols-outlined text-base">undo</span>
+          Undo Point
+        </button>
+      )}
 
       <div className="mb-2 flex gap-3">
         <button
