@@ -102,6 +102,27 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   );
   const chipRowRef = useRef<HTMLDivElement>(null);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(d.role === "admin"))
+      .catch(() => {});
+  }, []);
+
+  // Fixed-partner team assignment for a still-registering session — seeded
+  // from whatever's already saved, edited locally, then written back with
+  // "Save Teams". Only re-seeded when the session itself changes, not on
+  // every poll refresh, so it doesn't clobber an admin's in-progress taps.
+  const [teamPairs, setTeamPairs] = useState<[string, string][]>([]);
+  const [selectedForTeam, setSelectedForTeam] = useState<string | null>(null);
+  const [savingTeams, setSavingTeams] = useState(false);
+  const [teamsError, setTeamsError] = useState("");
+  useEffect(() => {
+    if (!session) return;
+    setTeamPairs(session.fixedPartnerships.map((p) => [p.player1Id, p.player2Id]));
+  }, [session?.id]);
+
   // Coming back from the scoreboard, scroll to the match just finished. The
   // browser can't restore this itself: the list is fetched client-side, so at
   // restoration time the page is still the loading modal. Runs once per finish
@@ -157,6 +178,54 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     await navigator.clipboard.writeText(url);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 1500);
+  }
+
+  function tapForTeam(playerId: string) {
+    if (selectedForTeam === null) {
+      setSelectedForTeam(playerId);
+    } else if (selectedForTeam === playerId) {
+      setSelectedForTeam(null);
+    } else {
+      setTeamPairs((prev) => [...prev, [selectedForTeam, playerId]]);
+      setSelectedForTeam(null);
+    }
+  }
+
+  function untapTeam(pair: [string, string]) {
+    setTeamPairs((prev) => prev.filter((p) => p !== pair));
+  }
+
+  function randomizeTeams() {
+    if (!session) return;
+    const ids = session.players.map((sp) => sp.player.id);
+    const shuffled = [...ids];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const newPairs: [string, string][] = [];
+    for (let i = 0; i + 1 < shuffled.length; i += 2) {
+      newPairs.push([shuffled[i], shuffled[i + 1]]);
+    }
+    setTeamPairs(newPairs);
+    setSelectedForTeam(null);
+  }
+
+  async function saveTeams() {
+    setTeamsError("");
+    setSavingTeams(true);
+    const res = await fetch(`/api/sessions/${id}/partnerships`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partnerships: teamPairs }),
+    });
+    setSavingTeams(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setTeamsError(body.error || "Could not save teams");
+      return;
+    }
+    refresh();
   }
 
   async function rebalanceRounds() {
@@ -238,6 +307,15 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   if (!session) {
     return <LoadingModal open />;
   }
+
+  const rosterPlayers = session.players.map((sp) => sp.player);
+  const pairedIds = new Set(teamPairs.flat());
+  const unpairedPlayers = rosterPlayers.filter((p) => !pairedIds.has(p.id));
+  const teamsComplete =
+    rosterPlayers.length > 0 &&
+    teamPairs.flat().length === rosterPlayers.length &&
+    pairedIds.size === rosterPlayers.length;
+  const needsTeams = session.fixedPartners && !teamsComplete;
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-24 md:max-w-xl lg:max-w-2xl">
@@ -381,14 +459,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               Standings
             </button>
           </div>
-          <Link
-            href={`/session/${id}/board`}
-            target="_blank"
-            className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
-          >
-            <span className="material-symbols-outlined text-sm">tv</span>
-            TV Board
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/session/${id}/register`}
+              className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
+            >
+              <span className="material-symbols-outlined text-sm">group</span>
+              Players
+            </Link>
+            <Link
+              href={`/session/${id}/board`}
+              target="_blank"
+              className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
+            >
+              <span className="material-symbols-outlined text-sm">tv</span>
+              TV Board
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -417,9 +504,91 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               </Link>
             </div>
           </div>
+
+          {session.fixedPartners && isAdmin && (
+            <div className="rounded-xl border-2 border-dashed border-outline p-4">
+              <div className="mb-3 flex items-end justify-between">
+                <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
+                  Assign Teams
+                </span>
+                <span className="text-xs font-bold text-lime">
+                  {teamPairs.length} Team{teamPairs.length === 1 ? "" : "s"}
+                </span>
+              </div>
+
+              {rosterPlayers.length >= 4 && rosterPlayers.length % 2 === 0 && (
+                <button
+                  type="button"
+                  onClick={randomizeTeams}
+                  className="neu-raised mb-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-ink-muted transition-colors active:scale-[0.98]"
+                >
+                  <span className="material-symbols-outlined text-lg">shuffle</span>
+                  Auto-Assign Teams
+                </button>
+              )}
+
+              {unpairedPlayers.length > 0 && (
+                <div className="mb-3">
+                  <p className="mb-2 text-xs text-ink-muted">Tap two players to pair them up.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {unpairedPlayers.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => tapForTeam(p.id)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                          selectedForTeam === p.id
+                            ? "bg-lime text-on-lime"
+                            : "neu-raised text-ink-muted"
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mb-3 flex flex-col gap-2">
+                {teamPairs.map((pair, idx) => {
+                  const nameOf = (pid: string) =>
+                    rosterPlayers.find((p) => p.id === pid)?.name ?? "?";
+                  return (
+                    <div
+                      key={`${pair[0]}-${pair[1]}`}
+                      className="neu-inset-sm flex items-center justify-between rounded-xl px-4 py-2"
+                    >
+                      <span className="text-sm text-ink">
+                        Team {idx + 1}: {nameOf(pair[0])} &amp; {nameOf(pair[1])}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => untapTeam(pair)}
+                        aria-label="Unpair team"
+                        className="material-symbols-outlined text-lg text-ink-muted"
+                      >
+                        close
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {teamsError && <p className="mb-2 text-sm text-live">{teamsError}</p>}
+              <button
+                type="button"
+                onClick={saveTeams}
+                disabled={savingTeams || teamPairs.length === 0}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-lime py-3 text-sm font-bold text-on-lime disabled:opacity-40"
+              >
+                {savingTeams ? <Spinner className="text-base" /> : "Save Teams"}
+              </button>
+            </div>
+          )}
+
           <button
             onClick={startSession}
-            disabled={starting || session.players.length < 4}
+            disabled={starting || session.players.length < 4 || needsTeams}
             className="shimmer-btn"
           >
             {starting ? (
@@ -431,7 +600,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               ? "Starting..."
               : session.players.length < 4
                 ? `Need ${4 - session.players.length} more player${4 - session.players.length > 1 ? "s" : ""}`
-                : "Start Session"}
+                : needsTeams
+                  ? "Assign teams before starting"
+                  : "Start Session"}
           </button>
         </div>
       )}

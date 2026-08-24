@@ -5,19 +5,41 @@ import Link from "next/link";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
 import { isRegistrationExpired } from "@/lib/registration";
-import type { SessionDto } from "@/lib/types";
+import type { PlayerRef } from "@/lib/types";
 
-export function RegisterClient({ id, isAdmin }: { id: string; isAdmin: boolean }) {
-  const [session, setSession] = useState<SessionDto | null>(null);
+type RegisterSessionInfo = {
+  name: string;
+  date: string;
+  players: { player: PlayerRef }[];
+  rounds: { id: string }[];
+};
+
+export function RegisterClient({
+  id,
+  isAuthenticated,
+}: {
+  id: string;
+  isAuthenticated: boolean;
+}) {
+  const [session, setSession] = useState<RegisterSessionInfo | null>(null);
   const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  // A logged-in visitor (any credential — this is only ever shared with
+  // people the organizer already trusts) can manage the roster anytime;
+  // an anonymous link-holder can only add themselves before the session
+  // starts, via the separate no-login public endpoints.
+  const sessionUrl = isAuthenticated ? `/api/sessions/${id}` : `/api/public/sessions/${id}`;
+  const addPlayerUrl = isAuthenticated
+    ? `/api/sessions/${id}/players`
+    : `/api/public/sessions/${id}/players`;
+
   const refresh = useCallback(async () => {
-    const res = await fetch(`/api/sessions/${id}`);
+    const res = await fetch(sessionUrl);
     if (res.ok) setSession(await res.json());
-  }, [id]);
+  }, [sessionUrl]);
 
   useEffect(() => {
     refresh();
@@ -30,7 +52,7 @@ export function RegisterClient({ id, isAdmin }: { id: string; isAdmin: boolean }
 
     setError("");
     setAdding(true);
-    const res = await fetch(`/api/sessions/${id}/players`, {
+    const res = await fetch(addPlayerUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: cleanName }),
@@ -60,7 +82,7 @@ export function RegisterClient({ id, isAdmin }: { id: string; isAdmin: boolean }
 
   const isStarted = session.rounds.length > 0;
   const registrationClosed =
-    (isStarted || isRegistrationExpired(new Date(session.date))) && !isAdmin;
+    (isStarted || isRegistrationExpired(new Date(session.date))) && !isAuthenticated;
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28 md:max-w-xl lg:max-w-2xl">
@@ -82,7 +104,7 @@ export function RegisterClient({ id, isAdmin }: { id: string; isAdmin: boolean }
       </header>
 
       <div className="flex flex-1 flex-col gap-6 px-5 pt-4">
-        {isStarted && isAdmin && (
+        {isStarted && isAuthenticated && (
           <p className="text-xs text-ink-muted">
             This session already started — adding a player here reshuffles every round
             that hasn&apos;t started yet.
@@ -143,7 +165,7 @@ export function RegisterClient({ id, isAdmin }: { id: string; isAdmin: boolean }
                   <span className="material-symbols-outlined text-lg text-outline">person</span>
                   {player.name}
                 </span>
-                {isAdmin && (
+                {isAuthenticated && (
                   <button
                     onClick={() => removePlayer(player.id)}
                     disabled={removingId === player.id}

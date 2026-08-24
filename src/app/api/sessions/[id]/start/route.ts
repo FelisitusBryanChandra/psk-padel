@@ -7,7 +7,11 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const session = await prisma.session.findUnique({
     where: { id },
-    include: { players: true, rounds: true },
+    include: {
+      players: { where: { active: true } },
+      rounds: true,
+      fixedPartnerships: true,
+    },
   });
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -17,6 +21,19 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
   if (session.players.length < 4) {
     return NextResponse.json({ error: "Need at least 4 players to start" }, { status: 400 });
+  }
+
+  if (session.fixedPartners) {
+    const rosterIds = session.players.map((sp) => sp.playerId);
+    const pairedIds = session.fixedPartnerships.flatMap((p) => [p.player1Id, p.player2Id]);
+    const allPaired =
+      pairedIds.length === rosterIds.length && rosterIds.every((pid) => pairedIds.includes(pid));
+    if (!allPaired) {
+      return NextResponse.json(
+        { error: "Assign every registered player to a team before starting" },
+        { status: 400 }
+      );
+    }
   }
 
   await generateInitialRounds(id, session.players.length);

@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { findOrCreatePlayer } from "@/lib/player";
-import { rebalanceUpcomingRounds } from "@/lib/rotation";
-import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
 import { isRegistrationExpired } from "@/lib/registration";
 
 const bodySchema = z.object({ name: z.string().trim().min(1).max(80) });
 
+// The no-login counterpart of POST /api/sessions/[id]/players — an
+// anonymous caller can never be admin, so there's no bypass here: once the
+// session has started or its registration window has closed, this always
+// rejects (the admin still adds players via the logged-in route instead).
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = await params;
   const parsed = bodySchema.safeParse(await req.json());
@@ -18,15 +20,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
-    include: { rounds: { select: { id: true } } },
+    select: { date: true, rounds: { select: { id: true } } },
   });
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
-  const registrationClosed = session.rounds.length > 0 || isRegistrationExpired(session.date);
-  if (!auth && registrationClosed) {
+  if (session.rounds.length > 0 || isRegistrationExpired(session.date)) {
     return NextResponse.json(
       { error: "Registration for this session has closed" },
       { status: 400 }
@@ -41,13 +41,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       update: { active: true },
     });
   });
-
-  // Joining mid-session: reshuffle the not-yet-started rounds so the new
-  // player actually gets folded into the rotation instead of waiting for
-  // the next session.
-  if (session.rounds.length > 0) {
-    await rebalanceUpcomingRounds(sessionId);
-  }
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

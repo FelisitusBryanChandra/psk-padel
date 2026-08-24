@@ -97,7 +97,10 @@ export default function NewSessionPage() {
     e.preventDefault();
     setError("");
 
-    if (fixedPartners) {
+    // An empty roster is a valid draft (players self-register later, and
+    // teams get assigned from the session page once they have) — the
+    // even-count/all-paired checks only apply once names are typed in here.
+    if (fixedPartners && cleanPlayerNames.length > 0) {
       if (cleanPlayerNames.length < 4 || cleanPlayerNames.length % 2 !== 0) {
         setError("Fixed partners requires an even number of players, at least 4");
         return;
@@ -402,11 +405,19 @@ export default function NewSessionPage() {
               enough join to start.
             </p>
           )}
-          {fixedPartners && (cleanPlayerNames.length < 4 || cleanPlayerNames.length % 2 !== 0) && (
+          {fixedPartners && cleanPlayerNames.length === 0 && (
             <p className="mt-2 text-xs text-ink-muted">
-              Fixed partners needs an even number of players, at least 4.
+              No players yet &mdash; the session opens for self-registration, and you can
+              assign teams from the session page once enough people join.
             </p>
           )}
+          {fixedPartners &&
+            cleanPlayerNames.length > 0 &&
+            (cleanPlayerNames.length < 4 || cleanPlayerNames.length % 2 !== 0) && (
+              <p className="mt-2 text-xs text-ink-muted">
+                Fixed partners needs an even number of players, at least 4.
+              </p>
+            )}
         </div>
 
         {fixedPartners && cleanPlayerNames.length >= 2 && (

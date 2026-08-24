@@ -69,7 +69,9 @@ export async function POST(req: NextRequest) {
 
   const cleanNames = [...new Set(playerNames.map((n) => n.trim()).filter(Boolean))];
 
-  if (fixedPartners) {
+  // An empty roster is a valid draft — players self-register later, and
+  // teams get assigned from the session page once they have.
+  if (fixedPartners && cleanNames.length > 0) {
     if (cleanNames.length < 4 || cleanNames.length % 2 !== 0) {
       return NextResponse.json(
         { error: "Fixed partners requires an even number of players, at least 4" },

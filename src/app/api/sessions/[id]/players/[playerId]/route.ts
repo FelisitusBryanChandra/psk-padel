@@ -8,8 +8,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; playerId: string }> }
 ) {
   const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
-  if (auth?.role !== "admin") {
-    return NextResponse.json({ error: "Only an admin can remove a player" }, { status: 403 });
+  if (!auth) {
+    return NextResponse.json({ error: "You must be logged in to remove a player" }, { status: 403 });
   }
 
   const { id: sessionId, playerId } = await params;

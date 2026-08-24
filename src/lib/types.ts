@@ -33,6 +33,8 @@ export type SessionDto = {
   scoringMode: "POINTS" | "SET";
   gamesPerSet: number;
   goldenPoint: boolean;
+  fixedPartners: boolean;
+  fixedPartnerships: { player1Id: string; player2Id: string }[];
   players: { player: PlayerRef }[];
   rounds: RoundDto[];
 };

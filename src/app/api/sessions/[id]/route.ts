@@ -11,6 +11,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     where: { id },
     include: {
       players: { where: { active: true }, include: { player: true } },
+      fixedPartnerships: { select: { player1Id: true, player2Id: true } },
       rounds: {
         orderBy: { roundNumber: "asc" },
         include: {
