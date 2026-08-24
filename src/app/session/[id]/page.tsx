@@ -88,6 +88,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [rebalancing, setRebalancing] = useState(false);
   const [confirmingRebalance, setConfirmingRebalance] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [swappingId, setSwappingId] = useState<string | null>(null);
   const [swapName, setSwapName] = useState("");
   const [editingCourts, setEditingCourts] = useState(false);
@@ -149,6 +150,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     await fetch(`/api/sessions/${id}/start`, { method: "POST" });
     setStarting(false);
     refresh();
+  }
+
+  async function copyRegistrationLink() {
+    const url = `${window.location.origin}/session/${id}/register`;
+    await navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 1500);
   }
 
   async function rebalanceRounds() {
@@ -390,13 +398,24 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             <p className="text-sm text-ink-muted">
               Registration is open &mdash; share this link so players can add their own name.
             </p>
-            <Link
-              href={`/session/${id}/register`}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-surface-highest px-4 py-2 text-sm font-bold text-ink"
-            >
-              <span className="material-symbols-outlined text-lg">person_add</span>
-              Open Registration Page
-            </Link>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={copyRegistrationLink}
+                className="inline-flex items-center gap-2 rounded-xl bg-lime px-4 py-2 text-sm font-bold text-on-lime"
+              >
+                <span className="material-symbols-outlined text-lg">
+                  {linkCopied ? "check" : "content_copy"}
+                </span>
+                {linkCopied ? "Copied!" : "Copy Link"}
+              </button>
+              <Link
+                href={`/session/${id}/register`}
+                className="inline-flex items-center gap-2 rounded-xl bg-surface-highest px-4 py-2 text-sm font-bold text-ink"
+              >
+                <span className="material-symbols-outlined text-lg">person_add</span>
+                Open Registration Page
+              </Link>
+            </div>
           </div>
           <button
             onClick={startSession}

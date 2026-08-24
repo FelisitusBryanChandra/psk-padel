@@ -31,9 +31,9 @@ export default function NewSessionPage() {
     if (!raw) return;
     sessionStorage.removeItem("psk_import");
     try {
-      const imported = JSON.parse(raw) as { name: string; date: string; players: string[] };
-      setName(imported.name);
-      setDate(imported.date);
+      const imported = JSON.parse(raw) as { name?: string; date?: string; players: string[] };
+      if (imported.name) setName(imported.name);
+      if (imported.date) setDate(imported.date);
       setPlayers(imported.players.length ? imported.players : ["", "", "", ""]);
     } catch {
       // ignore malformed import data

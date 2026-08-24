@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const MONTHS_ID = [
@@ -42,20 +42,25 @@ function parseSchedule(text: string) {
   const courtLine = lines.find((l) => l.startsWith("Court:"));
   const courtLabel = courtLine?.replace("Court:", "").trim() || "TBA";
 
+  const listItem = /^(?:\d+[.)]|-)\s*/;
   const players = lines
-    .filter((l) => /^\d+\.\s*/.test(l))
-    .map((l) => l.replace(/^\d+\.\s*/, "").trim());
+    .filter((l) => listItem.test(l))
+    .map((l) => l.replace(listItem, "").trim())
+    .filter(Boolean);
 
   const dateLine = lines.find(
-    (l) => l !== "Next Schedule:" && l !== trfLine && l !== courtLine && !/^\d+\.\s*/.test(l)
+    (l) => l !== "Next Schedule:" && l !== trfLine && l !== courtLine && !listItem.test(l)
   );
 
   return { description, hostName, courtLabel, players, dateText: dateLine ?? "" };
 }
 
-export default function SchedulePage() {
+function ScheduleForm() {
   const router = useRouter();
-  const [mode, setMode] = useState<"export" | "import">("export");
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<"export" | "import">(
+    searchParams.get("mode") === "import" ? "import" : "export"
+  );
 
   // Export state
   const [hostName, setHostName] = useState("");
@@ -88,19 +93,24 @@ export default function SchedulePage() {
   function handleImport() {
     setImportError("");
     const parsed = parseSchedule(importText);
-    const date = parseIndonesianDate(parsed.dateText);
-    if (!date || parsed.players.length === 0) {
-      setImportError("Couldn't parse that text — check it matches the expected format.");
+    if (parsed.players.length === 0) {
+      setImportError("Couldn't find any player names — list them one per line, e.g. \"1. Name\".");
       return;
     }
-    const mmddyyyy = `${String(date.getMonth() + 1).padStart(2, "0")}/${String(
-      date.getDate()
-    ).padStart(2, "0")}/${date.getFullYear()}`;
+
+    // Date/court are a bonus when the pasted text happens to include them
+    // (the old richer share-text format still round-trips), but a bare
+    // numbered player list is all that's required to continue.
+    const date = parseIndonesianDate(parsed.dateText);
+    const mmddyyyy = date
+      ? `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`
+      : null;
+
     sessionStorage.setItem(
       "psk_import",
       JSON.stringify({
-        name: `${mmddyyyy} - ${parsed.courtLabel}`,
-        date: date.toISOString().slice(0, 10),
+        name: mmddyyyy ? `${mmddyyyy} - ${parsed.courtLabel}` : undefined,
+        date: date ? date.toISOString().slice(0, 10) : undefined,
         players: parsed.players,
       })
     );
@@ -225,11 +235,17 @@ export default function SchedulePage() {
         </div>
       ) : (
         <div className="flex flex-col gap-4 px-5">
+          <p className="text-sm text-ink-muted">
+            Paste a numbered player list — that&apos;s all that&apos;s needed:
+          </p>
+          <pre className="neu-inset whitespace-pre-wrap rounded-xl border border-white/5 p-4 text-sm text-ink-muted">
+            {"1. Bryan\n2. Test\n3. Test3\n4. test4"}
+          </pre>
           <textarea
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            placeholder="Paste the schedule text here..."
-            rows={12}
+            placeholder={"1. Bryan\n2. Test\n3. Test3\n4. test4"}
+            rows={10}
             className="neu-inset rounded-xl border border-white/5 p-4 text-sm text-ink outline-none focus:border-lime"
           />
           {importError && <p className="text-sm text-live">{importError}</p>}
@@ -243,5 +259,13 @@ export default function SchedulePage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function SchedulePage() {
+  return (
+    <Suspense fallback={null}>
+      <ScheduleForm />
+    </Suspense>
   );
 }

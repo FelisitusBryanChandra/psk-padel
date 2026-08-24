@@ -1,11 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rebalanceUpcomingRounds } from "@/lib/rotation";
+import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
 
 export async function DELETE(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string; playerId: string }> }
 ) {
+  const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
+  if (auth?.role !== "admin") {
+    return NextResponse.json({ error: "Only an admin can remove a player" }, { status: 403 });
+  }
+
   const { id: sessionId, playerId } = await params;
 
   const session = await prisma.session.findUnique({
