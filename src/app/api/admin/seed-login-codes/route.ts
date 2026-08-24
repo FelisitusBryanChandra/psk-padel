@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { passcodeToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const NAMED_CODES: Record<string, string> = {
-  Bryan: "Bryan123",
-  Reynaldo: "Reynaldo123",
-  Hersen: "Hersen123",
-  Ricky: "Ricky123",
+const NAMED_CODES: Record<string, { passcode: string; community?: string }> = {
+  Bryan: { passcode: "Bryan123" },
+  Reynaldo: { passcode: "Reynaldo123" },
+  Hersen: { passcode: "Hersen123" },
+  Ricky: { passcode: "Ricky123" },
+  Daniel: { passcode: "Daniel123", community: "KANTO" },
 };
 
 export async function POST(req: NextRequest) {
@@ -16,13 +17,23 @@ export async function POST(req: NextRequest) {
   }
 
   const results = [];
-  for (const [label, code] of Object.entries(NAMED_CODES)) {
-    const codeHash = await passcodeToken(code);
+  for (const [label, { passcode, community }] of Object.entries(NAMED_CODES)) {
+    const codeHash = await passcodeToken(passcode);
+    const communityId = community
+      ? (
+          await prisma.community.upsert({
+            where: { code: community },
+            create: { name: community, code: community },
+            update: {},
+          })
+        ).id
+      : undefined;
+
     const existing = await prisma.loginCode.findFirst({ where: { label } });
     if (existing) {
-      await prisma.loginCode.update({ where: { id: existing.id }, data: { codeHash } });
+      await prisma.loginCode.update({ where: { id: existing.id }, data: { codeHash, communityId } });
     } else {
-      await prisma.loginCode.create({ data: { label, codeHash } });
+      await prisma.loginCode.create({ data: { label, codeHash, communityId } });
     }
     results.push(label);
   }
