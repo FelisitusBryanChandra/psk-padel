@@ -4,7 +4,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmModal } from "./ConfirmModal";
 
-export function DeleteSessionButton({ sessionId, name }: { sessionId: string; name: string }) {
+export function DeleteSessionButton({
+  sessionId,
+  name,
+  onDeleted,
+}: {
+  sessionId: string;
+  name: string;
+  onDeleted?: () => void;
+}) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -20,6 +28,7 @@ export function DeleteSessionButton({ sessionId, name }: { sessionId: string; na
     await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
     setDeleting(false);
     setConfirming(false);
+    onDeleted?.();
     router.refresh();
   }
 

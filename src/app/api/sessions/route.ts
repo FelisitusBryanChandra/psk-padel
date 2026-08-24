@@ -24,24 +24,36 @@ const bodySchema = z.object({
 
 export async function GET(req: NextRequest) {
   const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
+  const isAdmin = auth?.role === "admin";
 
   const sessions = await prisma.session.findMany({
     where: communityFilter(auth),
     orderBy: { date: "desc" },
-    include: { players: { include: { player: true } }, rounds: true },
+    include: {
+      players: true,
+      rounds: { include: { matches: { select: { completed: true } } } },
+      community: { select: { code: true } },
+    },
   });
 
   return NextResponse.json(
-    sessions.map((s) => ({
-      id: s.id,
-      name: s.name,
-      date: s.date,
-      courts: s.courts,
-      pointsPerMatch: s.pointsPerMatch,
-      pointsPerServe: s.pointsPerServe,
-      playerCount: s.players.length,
-      roundCount: s.rounds.length,
-    }))
+    sessions.map((s) => {
+      const allMatches = s.rounds.flatMap((r) => r.matches);
+      const isLive = allMatches.some((m) => !m.completed);
+      const status = allMatches.length === 0 ? null : isLive ? "LIVE" : "COMPLETED";
+
+      return {
+        id: s.id,
+        name: s.name,
+        date: s.date,
+        sessionType: s.sessionType,
+        courts: s.courts,
+        communityCode: isAdmin ? (s.community?.code ?? null) : null,
+        playerCount: s.players.length,
+        roundCount: s.rounds.length,
+        status,
+      };
+    })
   );
 }
 

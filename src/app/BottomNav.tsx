@@ -45,7 +45,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="glass-strong fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 items-center justify-around px-5 pb-3 pt-4 md:max-w-xl lg:max-w-2xl">
+    <nav className="glass-strong fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 items-center justify-between px-9 pb-3 pt-4 md:max-w-xl lg:max-w-2xl">
       <Link
         href={SIDE_ITEMS[0].href}
         className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
@@ -56,7 +56,12 @@ export function BottomNav() {
         {SIDE_ITEMS[0].label}
       </Link>
 
-      <div ref={wrapperRef} className="relative">
+      {/* Positioned against `nav` itself (already a containing block, since
+          it's `fixed`) rather than sharing the flex row with the side
+          links — "Home" and "Profile" aren't the same text width, so
+          justify-around/between would otherwise pull this off the true
+          center. */}
+      <div ref={wrapperRef} className="absolute bottom-11 left-1/2 -translate-x-1/2">
         <div
           className={`absolute bottom-full left-1/2 mb-4 flex -translate-x-1/2 gap-8 transition-all duration-200 ${
             dialOpen
@@ -82,7 +87,7 @@ export function BottomNav() {
           onClick={() => setDialOpen((v) => !v)}
           aria-label={dialOpen ? "Close" : "New session"}
           aria-expanded={dialOpen}
-          className="-mt-8 flex h-14 w-14 items-center justify-center rounded-full bg-lime text-on-lime shadow-lg transition-transform active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-lime text-on-lime shadow-lg transition-transform active:scale-95"
         >
           <span
             className="material-symbols-outlined text-3xl transition-transform duration-200"

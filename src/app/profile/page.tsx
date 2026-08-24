@@ -1,15 +1,63 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { BottomNav } from "@/app/BottomNav";
 import { Logo } from "@/app/Logo";
 import { ThemeToggle } from "@/app/ThemeToggle";
-import { getServerAuth } from "@/lib/auth";
-import { computeCommunityStats } from "@/lib/communityStats";
+import type { CommunityStats } from "@/lib/communityStats";
 import { LogoutButton } from "./LogoutButton";
 
-export const dynamic = "force-dynamic";
+function ProfileSkeleton() {
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
+      <header className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-surface-highest" />
+          <div className="h-6 w-24 animate-pulse rounded bg-surface-highest" />
+        </div>
+        <div className="h-9 w-9 animate-pulse rounded-full bg-surface-highest" />
+      </header>
 
-export default async function ProfilePage() {
-  const auth = await getServerAuth();
-  const stats = await computeCommunityStats(auth);
+      <div className="mb-6 glass rounded-xl p-4">
+        <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-highest" />
+        <div className="h-6 w-32 animate-pulse rounded bg-surface-highest" />
+      </div>
+
+      <div className="mb-6">
+        <div className="mb-3 h-3 w-20 animate-pulse rounded bg-surface-highest" />
+        <div className="grid grid-cols-2 gap-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="neu-inset h-20 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-3 h-3 w-24 animate-pulse rounded bg-surface-highest" />
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="neu-inset h-20 animate-pulse rounded-xl" />
+          ))}
+        </div>
+        <div className="mb-3 neu-inset h-20 animate-pulse rounded-xl" />
+        <div className="glass h-40 animate-pulse rounded-xl" />
+      </div>
+    </main>
+  );
+}
+
+export default function ProfilePage() {
+  const [stats, setStats] = useState<CommunityStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/profile-stats")
+      .then((r) => r.json())
+      .then(setStats);
+  }, []);
+
+  if (!stats) {
+    return <ProfileSkeleton />;
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
