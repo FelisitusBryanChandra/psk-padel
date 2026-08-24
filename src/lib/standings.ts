@@ -67,11 +67,16 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
       .map((r) => r.played)
   );
 
+  // The missed-round bonus only makes sense for race-to-points scoring —
+  // in tennis/SET mode, games won isn't a "points" tally that a bonus
+  // should be added to.
+  const bonusApplies = session.scoringMode !== "SET";
+
   for (const row of rows.values()) {
     // Removed players stop accruing the missed-round bonus — their earned
     // points stay on the board, but they no longer count toward "everyone
     // who's still in this session".
-    if (activePlayerIds.has(row.playerId)) {
+    if (bonusApplies && activePlayerIds.has(row.playerId)) {
       row.missedRounds = maxPlayed - row.played;
       row.mBonus = row.missedRounds * 2;
     }
