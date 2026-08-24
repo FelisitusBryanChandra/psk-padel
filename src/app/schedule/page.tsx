@@ -238,9 +238,6 @@ function ScheduleForm() {
           <p className="text-sm text-ink-muted">
             Paste a numbered player list — that&apos;s all that&apos;s needed:
           </p>
-          <pre className="neu-inset whitespace-pre-wrap rounded-xl border border-white/5 p-4 text-sm text-ink-muted">
-            {"1. Bryan\n2. Test\n3. Test3\n4. test4"}
-          </pre>
           <textarea
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
