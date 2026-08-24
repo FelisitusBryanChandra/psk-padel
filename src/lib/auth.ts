@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 export const AUTH_COOKIE = "psk_auth";
 export const AUTH_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
 
@@ -66,4 +68,10 @@ export async function verifySessionToken(
   } catch {
     return null;
   }
+}
+
+/** Reads and verifies the auth cookie for the current request (Server Components/Route Handlers only). */
+export async function getServerAuth(): Promise<AuthPayload | null> {
+  const store = await cookies();
+  return verifySessionToken(store.get(AUTH_COOKIE)?.value);
 }

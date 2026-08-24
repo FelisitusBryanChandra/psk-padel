@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { BottomNav } from "./BottomNav";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
@@ -176,6 +177,7 @@ export default async function HomePage() {
           </div>
         </section>
       ))}
+      <BottomNav />
     </main>
   );
 }
