@@ -40,20 +40,6 @@ export default async function HomePage() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link
-            href="/schedule"
-            className="neu-raised flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-shadow active:shadow-none"
-            aria-label="Plan & share schedule"
-          >
-            <span className="material-symbols-outlined text-lg">share</span>
-          </Link>
-          <Link
-            href="/session/new"
-            className="flex items-center gap-1 rounded-xl bg-lime px-4 py-2 text-sm font-black text-on-lime active:scale-95 transition-transform"
-          >
-            <span className="material-symbols-outlined text-lg">add</span>
-            New
-          </Link>
         </div>
       </header>
 
