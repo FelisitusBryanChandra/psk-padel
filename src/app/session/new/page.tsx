@@ -79,6 +79,20 @@ export default function NewSessionPage() {
     setPairs((prev) => prev.filter((p) => p !== pair));
   }
 
+  function randomizePairs() {
+    const shuffled = [...cleanPlayerNames];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const randomPairs: [string, string][] = [];
+    for (let i = 0; i + 1 < shuffled.length; i += 2) {
+      randomPairs.push([shuffled[i], shuffled[i + 1]]);
+    }
+    setPairs(randomPairs);
+    setSelectedForPair(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -405,6 +419,17 @@ export default function NewSessionPage() {
                 {validPairs.length} Team{validPairs.length === 1 ? "" : "s"}
               </span>
             </div>
+
+            {cleanPlayerNames.length >= 4 && cleanPlayerNames.length % 2 === 0 && (
+              <button
+                type="button"
+                onClick={randomizePairs}
+                className="neu-raised mb-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-ink-muted transition-colors active:scale-[0.98]"
+              >
+                <span className="material-symbols-outlined text-lg">shuffle</span>
+                Auto-Assign Teams
+              </button>
+            )}
 
             {unpairedNames.length > 0 && (
               <div className="mb-3">

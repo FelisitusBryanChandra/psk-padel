@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const session = await prisma.session.findUnique({
     where: { id },
     include: {
-      players: { include: { player: true } },
+      players: { where: { active: true }, include: { player: true } },
       rounds: {
         orderBy: { roundNumber: "asc" },
         include: {

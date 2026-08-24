@@ -326,15 +326,21 @@ export async function generateNextRound(sessionId: string) {
   const session = await prisma.session.findUniqueOrThrow({
     where: { id: sessionId },
     include: {
-      players: { include: { player: true } },
+      players: { where: { active: true }, include: { player: true } },
       rounds: { include: { matches: true }, orderBy: { roundNumber: "asc" } },
       fixedPartnerships: true,
     },
   });
 
   const playerIds = session.players.map((sp) => sp.playerId);
+  const activePlayerIds = new Set(playerIds);
+  // A partnership survives only while both partners are still active — one
+  // partner being removed mid-session breaks the team, so it simply stops
+  // being scheduled rather than playing shorthanded.
   const fixedPartnerships: [string, string][] = session.fixedPartners
-    ? session.fixedPartnerships.map((p) => [p.player1Id, p.player2Id])
+    ? session.fixedPartnerships
+        .filter((p) => activePlayerIds.has(p.player1Id) && activePlayerIds.has(p.player2Id))
+        .map((p) => [p.player1Id, p.player2Id])
     : [];
 
   // The rotation functions only care about "how much did this team score" as

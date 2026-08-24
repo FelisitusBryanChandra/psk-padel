@@ -58,7 +58,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
     return <LoadingModal open />;
   }
 
-  const isOpen = session.rounds.length === 0;
+  const isStarted = session.rounds.length > 0;
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-28 md:max-w-xl lg:max-w-2xl">
@@ -73,12 +73,13 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
       </header>
 
       <div className="flex flex-1 flex-col gap-6 px-5 pt-4">
-        {!isOpen ? (
-          <p className="text-sm text-ink-muted">
-            Registration is closed &mdash; this session already started.
+        {isStarted && (
+          <p className="text-xs text-ink-muted">
+            This session already started &mdash; adding or removing a player here reshuffles
+            every round that hasn&apos;t started yet.
           </p>
-        ) : (
-          <form onSubmit={addPlayer} className="flex flex-col gap-2">
+        )}
+        <form onSubmit={addPlayer} className="flex flex-col gap-2">
             <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
               Add your name
             </span>
@@ -104,8 +105,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
               </button>
             </div>
             {error && <p className="text-sm text-live">{error}</p>}
-          </form>
-        )}
+        </form>
 
         <div>
           <div className="mb-3 flex items-end justify-between">
@@ -126,16 +126,14 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
                   <span className="material-symbols-outlined text-lg text-outline">person</span>
                   {player.name}
                 </span>
-                {isOpen && (
-                  <button
-                    onClick={() => removePlayer(player.id)}
-                    disabled={removingId === player.id}
-                    aria-label={`Remove ${player.name}`}
-                    className="material-symbols-outlined text-lg text-live disabled:opacity-40"
-                  >
-                    close
-                  </button>
-                )}
+                <button
+                  onClick={() => removePlayer(player.id)}
+                  disabled={removingId === player.id}
+                  aria-label={`Remove ${player.name}`}
+                  className="material-symbols-outlined text-lg text-live disabled:opacity-40"
+                >
+                  close
+                </button>
               </div>
             ))}
           </div>

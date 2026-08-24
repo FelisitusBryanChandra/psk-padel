@@ -79,9 +79,10 @@ model FixedPartnership {
 }
 
 model SessionPlayer {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   sessionId String
   playerId  String
+  active    Boolean @default(true)
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   player  Player  @relation(fields: [playerId], references: [id])

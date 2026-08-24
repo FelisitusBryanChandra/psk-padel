@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       sessionId_playerId: { sessionId: match.round.sessionId, playerId },
     },
   });
-  if (!inRoster) {
+  if (!inRoster || !inRoster.active) {
     return NextResponse.json({ error: "Player is not in this session" }, { status: 400 });
   }
 

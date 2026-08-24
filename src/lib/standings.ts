@@ -59,11 +59,22 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
     }
   }
 
-  const maxPlayed = Math.max(0, ...Array.from(rows.values(), (r) => r.played));
+  const activePlayerIds = new Set(session.players.filter((sp) => sp.active).map((sp) => sp.playerId));
+  const maxPlayed = Math.max(
+    0,
+    ...Array.from(rows.values())
+      .filter((r) => activePlayerIds.has(r.playerId))
+      .map((r) => r.played)
+  );
 
   for (const row of rows.values()) {
-    row.missedRounds = maxPlayed - row.played;
-    row.mBonus = row.missedRounds * 10;
+    // Removed players stop accruing the missed-round bonus — their earned
+    // points stay on the board, but they no longer count toward "everyone
+    // who's still in this session".
+    if (activePlayerIds.has(row.playerId)) {
+      row.missedRounds = maxPlayed - row.played;
+      row.mBonus = row.missedRounds * 2;
+    }
     row.sd = row.pointsFor - row.pointsAgainst;
     row.score = row.pointsFor + row.mBonus;
   }
