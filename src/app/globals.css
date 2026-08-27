@@ -304,11 +304,7 @@
   animation-name: wave-scroll;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .wave-layer {
-    animation: none;
-  }
+  will-change: transform;
 }
 
 /* Rotates the Scoreboard screen into landscape on portrait phones/tablets. */
