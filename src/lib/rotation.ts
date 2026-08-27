@@ -116,6 +116,59 @@ function computePointsSoFar(playerIds: string[], history: HistoryRound[]): Map<s
   return points;
 }
 
+function teamPointsSpread(teams: [string, string][], points: Map<string, number>): number {
+  const vals = teams.map((t) => points.get(t[0]) ?? 0);
+  return Math.max(...vals) - Math.min(...vals);
+}
+
+/**
+ * Mexicano-specific team selection: fairness (fewest games played) still
+ * decides who's eligible to play, but ties are no longer broken by pure
+ * random shuffle the way selectPlayingTeams does for Americano. Mexicano's
+ * whole premise is rank-proximity matchmaking, so a random pick among
+ * fairness-tied teams can seat a top-ranked team against a bottom-ranked one
+ * just because they both happened to be due a game. When more teams are
+ * tied at the fairness floor than there are slots, several random subsets
+ * are tried and the one with the smallest points spread is kept — still
+ * randomized (so play doesn't lock into a repeating block, same trap the
+ * comment on selectPlayingTeams describes), but biased toward keeping the
+ * field close.
+ */
+function selectMexicanoPlayingTeams(
+  teams: [string, string][],
+  courts: number,
+  gamesPlayed: Map<string, number>,
+  points: Map<string, number>,
+  hasResults: boolean
+): [string, string][] {
+  const capacityTeams = courts * 2;
+  if (teams.length <= capacityTeams) return teams;
+
+  const minGames = Math.min(...teams.map((t) => gamesPlayed.get(t[0]) ?? 0));
+  const floor = teams.filter((t) => (gamesPlayed.get(t[0]) ?? 0) === minGames);
+
+  if (floor.length <= capacityTeams) {
+    const rest = teams
+      .filter((t) => (gamesPlayed.get(t[0]) ?? 0) !== minGames)
+      .sort((a, b) => (gamesPlayed.get(a[0]) ?? 0) - (gamesPlayed.get(b[0]) ?? 0));
+    return [...shuffle(floor), ...rest].slice(0, capacityTeams);
+  }
+
+  if (!hasResults) return shuffle(floor).slice(0, capacityTeams);
+
+  let best = shuffle(floor).slice(0, capacityTeams);
+  let bestSpread = teamPointsSpread(best, points);
+  for (let i = 0; i < 50 && bestSpread > 0; i++) {
+    const attempt = shuffle(floor).slice(0, capacityTeams);
+    const spread = teamPointsSpread(attempt, points);
+    if (spread < bestSpread) {
+      best = attempt;
+      bestSpread = spread;
+    }
+  }
+  return best;
+}
+
 /**
  * Pure scheduling core (no DB): picks who sits out and who partners whom
  * for the next round, given the full match history so far. Split out from
@@ -275,7 +328,13 @@ export function planNextMexicanoRound(
   const hasResults = history.some((round) => round.matches.some((m) => m.completed));
 
   if (fixedPartnerships.length > 0) {
-    const playingTeams = selectPlayingTeams(fixedPartnerships, courts, gamesPlayed);
+    const playingTeams = selectMexicanoPlayingTeams(
+      fixedPartnerships,
+      courts,
+      gamesPlayed,
+      points,
+      hasResults
+    );
 
     const ordered = hasResults
       ? [...playingTeams].sort((a, b) => (points.get(b[0]) ?? 0) - (points.get(a[0]) ?? 0))
