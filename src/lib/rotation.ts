@@ -534,9 +534,18 @@ export async function rebalanceUpcomingRounds(sessionId: string) {
 
   await prisma.round.deleteMany({ where: { id: { in: toRegenerate.map((r) => r.id) } } });
 
-  for (let i = 0; i < toRegenerate.length; i++) {
+  // Mexicano's pairing depends on real results, so only the immediate next
+  // round is safe to regenerate blind — regenerating several trailing
+  // rounds in one batch would rank rounds 2+ on stale/zero data, the same
+  // defect fixed in generateInitialRounds. The rest come back one at a time
+  // through the normal completion-triggered flow as those rounds are
+  // played. Americano's round-robin doesn't need results to plan ahead, so
+  // it keeps regenerating the full trailing run.
+  const regenerateCount = session.sessionType === "MEXICANO" ? 1 : toRegenerate.length;
+
+  for (let i = 0; i < regenerateCount; i++) {
     await generateNextRound(sessionId);
   }
 
-  return { regenerated: toRegenerate.length };
+  return { regenerated: regenerateCount };
 }
