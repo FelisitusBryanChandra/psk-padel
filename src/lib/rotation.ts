@@ -133,6 +133,16 @@ function teamPointsSpread(teams: [string, string][], points: Map<string, number>
  * randomized (so play doesn't lock into a repeating block, same trap the
  * comment on selectPlayingTeams describes), but biased toward keeping the
  * field close.
+ *
+ * A combined fairness+rank cost function (weighting a small games-played
+ * tolerance against points spread, modeled on FIDE Swiss pairing) was
+ * tried and measured against this version over thousands of simulated
+ * rounds — it was not a reliable improvement (comparable or slightly worse
+ * average rank gap, and it let fairness slip further), so it was reverted
+ * in favor of this simpler, already-verified approach. Repeat-pairing
+ * concentration on very low court counts (e.g. 1 court / 6 teams) is a
+ * structural feature of that scenario, not a tie-breaking defect — neither
+ * version meaningfully changes it.
  */
 function selectMexicanoPlayingTeams(
   teams: [string, string][],
