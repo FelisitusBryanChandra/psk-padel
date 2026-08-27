@@ -13,16 +13,14 @@ const MEDAL_STYLE = [
 
 export function StandingsTable({
   rows,
-  sortBy,
   scoreLabel = "Score",
 }: {
   rows: StandingRow[];
-  sortBy: "sd" | "score";
   scoreLabel?: string;
 }) {
-  const sorted = sortStandings(rows, sortBy);
+  const sorted = sortStandings(rows);
 
-  const ranks = computeRanks(sorted, sortBy);
+  const ranks = computeRanks(sorted);
 
   return (
     <div className="glass overflow-hidden rounded-2xl">

@@ -6,13 +6,11 @@ import type { StandingRow } from "@/lib/types";
 
 export function ExportStandingsButton({
   rows,
-  sortBy,
   scoreLabel,
   sessionName,
   sessionDate,
 }: {
   rows: StandingRow[];
-  sortBy: "sd" | "score";
   scoreLabel: string;
   sessionName: string;
   sessionDate?: string;
@@ -26,7 +24,6 @@ export function ExportStandingsButton({
     try {
       await shareStandingsImage({
         rows,
-        sortBy,
         scoreLabel,
         sessionName,
         sessionDate,

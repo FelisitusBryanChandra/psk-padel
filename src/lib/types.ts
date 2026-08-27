@@ -54,20 +54,19 @@ export type StandingRow = {
   score: number;
 };
 
-export function sortStandings(rows: StandingRow[], by: "sd" | "score"): StandingRow[] {
+export function sortStandings(rows: StandingRow[]): StandingRow[] {
   return [...rows].sort((a, b) => {
-    const primary = by === "sd" ? b.sd - a.sd : b.score - a.score;
-    if (primary !== 0) return primary;
-    return b.score - a.score || b.wins - a.wins;
+    return b.score - a.score || b.wins - a.wins || b.sd - a.sd;
   });
 }
 
 /**
- * Standard competition ranking over an already-sorted list: ties on the active
- * sort key share a rank, and the next distinct value skips ahead accordingly
- * (1, 1, 3). Shared so the on-screen table and the exported image agree.
+ * Standard competition ranking over an already-sorted list: ties on score,
+ * wins, and SD share a rank, and the next distinct value skips ahead
+ * accordingly (1, 1, 3). Shared so the on-screen table and the exported image
+ * agree.
  */
-export function computeRanks(sorted: StandingRow[], by: "sd" | "score"): number[] {
+export function computeRanks(sorted: StandingRow[]): number[] {
   const ranks: number[] = [];
   sorted.forEach((r, idx) => {
     if (idx === 0) {
@@ -75,7 +74,7 @@ export function computeRanks(sorted: StandingRow[], by: "sd" | "score"): number[
       return;
     }
     const prev = sorted[idx - 1];
-    const tied = by === "sd" ? r.sd === prev.sd : r.score === prev.score;
+    const tied = r.score === prev.score && r.wins === prev.wins && r.sd === prev.sd;
     ranks.push(tied ? ranks[idx - 1] : idx + 1);
   });
   return ranks;

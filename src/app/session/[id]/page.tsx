@@ -7,7 +7,6 @@ import { ThemeToggle } from "@/app/ThemeToggle";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
 import { StandingsTable } from "@/app/StandingsTable";
-import { SortToggle } from "@/app/SortToggle";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import { takeFinishedMatch } from "@/lib/lastFinishedMatch";
@@ -81,7 +80,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     hasLiveMatch(s) ? 3000 : 15000
   );
   const [tab, setTab] = useState<"matches" | "standings">("matches");
-  const [sortBy, setSortBy] = useState<"sd" | "score">("sd");
   const [generating, setGenerating] = useState(false);
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -793,17 +791,14 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <div className="mb-4 flex items-center justify-between gap-3">
             <ExportStandingsButton
               rows={standings}
-              sortBy={sortBy}
               scoreLabel={session.scoringMode === "SET" ? "Games" : "Score"}
               sessionName={session.name}
               sessionDate={session.date}
             />
-            <SortToggle sortBy={sortBy} onChange={setSortBy} />
           </div>
 
           <StandingsTable
             rows={standings}
-            sortBy={sortBy}
             scoreLabel={session.scoringMode === "SET" ? "Games" : "Score"}
           />
         </div>

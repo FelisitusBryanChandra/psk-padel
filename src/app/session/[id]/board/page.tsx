@@ -1,8 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import { StandingsTable } from "@/app/StandingsTable";
-import { SortToggle } from "@/app/SortToggle";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import { Logo } from "@/app/Logo";
@@ -10,7 +9,6 @@ import { Logo } from "@/app/Logo";
 export default function BoardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { session, standings } = useSessionData(id, () => 5000);
-  const [sortBy, setSortBy] = useState<"sd" | "score">("sd");
 
   const liveMatches = (session?.rounds ?? []).flatMap((r) =>
     r.matches.filter((m) => !m.completed)
@@ -62,17 +60,14 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
       <div className="mb-4 flex items-center justify-between gap-3">
         <ExportStandingsButton
           rows={standings}
-          sortBy={sortBy}
           scoreLabel={session?.scoringMode === "SET" ? "Games" : "Score"}
           sessionName={session?.name || "PSK Padel"}
           sessionDate={session?.date}
         />
-        <SortToggle sortBy={sortBy} onChange={setSortBy} />
       </div>
 
       <StandingsTable
         rows={standings}
-        sortBy={sortBy}
         scoreLabel={session?.scoringMode === "SET" ? "Games" : "Score"}
       />
     </main>

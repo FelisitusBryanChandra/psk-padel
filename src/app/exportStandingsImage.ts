@@ -117,21 +117,20 @@ function label(
 
 export type ExportOptions = {
   rows: StandingRow[];
-  sortBy: "sd" | "score";
   scoreLabel: string;
   sessionName: string;
   sessionDate?: string;
 };
 
 export async function renderStandingsImage(opts: ExportOptions): Promise<Blob> {
-  const { rows, sortBy, scoreLabel, sessionName, sessionDate } = opts;
+  const { rows, scoreLabel, sessionName, sessionDate } = opts;
 
   // Without this the first export can land on the fallback font, since the
   // webfonts are only guaranteed loaded once the document says so.
   if (document.fonts?.ready) await document.fonts.ready;
 
-  const sorted = sortStandings(rows, sortBy);
-  const ranks = computeRanks(sorted, sortBy);
+  const sorted = sortStandings(rows);
+  const ranks = computeRanks(sorted);
   const p = readPalette();
 
   const height = HEADER_H + sorted.length * ROW_H + FOOTER_H;
@@ -163,10 +162,9 @@ export async function renderStandingsImage(opts: ExportOptions): Promise<Blob> {
         year: "numeric",
       })
     : "";
-  const rankedBy = sortBy === "sd" ? "Score Difference" : scoreLabel;
   label(ctx, p, 11, p.inkMuted);
   ctx.fillText(
-    [dateText, `Ranked by ${rankedBy}`]
+    [dateText, `Ranked by ${scoreLabel}`]
       .filter(Boolean)
       .join("  ·  ")
       .toUpperCase(),
@@ -176,20 +174,17 @@ export async function renderStandingsImage(opts: ExportOptions): Promise<Blob> {
 
   // Column headers.
   const headerY = 172;
-  // Full-contrast ink rather than lime: lime-on-cream is unreadable in light mode.
-  const active = (key: "sd" | "score") => (sortBy === key ? p.ink : p.inkMuted);
   label(ctx, p, 10, p.inkMuted);
   ctx.textAlign = "left";
   ctx.fillText("#", PAD + 10, headerY);
   ctx.fillText("PLAYER", COL.nameX, headerY);
   ctx.textAlign = "center";
   ctx.fillText("W-T-L", COL.wtlCx, headerY);
-  ctx.fillStyle = active("sd");
   ctx.fillText("SD", COL.sdCx, headerY);
-  ctx.fillStyle = p.inkMuted;
   ctx.fillText("+M", COL.mCx, headerY);
   ctx.textAlign = "right";
-  ctx.fillStyle = active("score");
+  // Full-contrast ink rather than lime: lime-on-cream is unreadable in light mode.
+  ctx.fillStyle = p.ink;
   ctx.fillText(scoreLabel.toUpperCase(), COL.scoreRight, headerY);
 
   ctx.strokeStyle = p.outline;
