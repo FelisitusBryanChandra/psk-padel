@@ -33,6 +33,7 @@ export type SessionDto = {
   id: string;
   name: string;
   date: string;
+  sessionType: "AMERICANO" | "MEXICANO";
   venueName: string | null;
   courtNames: string[];
   courts: number;

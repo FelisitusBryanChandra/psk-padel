@@ -152,6 +152,10 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   }, [session?.id]);
 
   const hasIncomplete = session?.rounds.some((r) => r.matches.some((m) => !m.completed));
+  const latestRound = session?.rounds[session.rounds.length - 1];
+  const awaitingCurrentMexicanoRound =
+    session?.sessionType === "MEXICANO" &&
+    (latestRound?.matches.some((m) => !m.completed) ?? false);
 
   async function reopenMatch(matchId: string) {
     await fetch(`/api/matches/${matchId}/reopen`, { method: "POST" });
@@ -802,7 +806,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
           <button
             onClick={generateRound}
-            disabled={generating}
+            disabled={generating || awaitingCurrentMexicanoRound}
             className="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline py-8 transition-colors active:scale-[0.98] disabled:opacity-40"
           >
             {generating ? (
@@ -813,7 +817,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               </span>
             )}
             <span className="font-heading text-sm font-bold uppercase tracking-widest text-ink-muted group-active:text-lime">
-              {generating ? "Adding..." : "Add More Matches"}
+              {generating
+                ? "Adding..."
+                : awaitingCurrentMexicanoRound
+                  ? "Finish this round first"
+                  : "Add More Matches"}
             </span>
           </button>
         </div>

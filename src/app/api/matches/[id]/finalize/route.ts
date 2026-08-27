@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { generateNextRound } from "@/lib/rotation";
 
 const pointsBodySchema = z.object({
   team1Score: z.number().int().min(0).max(999),
@@ -35,6 +36,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ? { ...parsed.data, team1GamePoints: 0, team2GamePoints: 0, completed: true }
       : { ...parsed.data, completed: true },
   });
+
+  // Mexicano's pairing depends on the round it just finished, so the next
+  // round is generated automatically once every match in the latest round
+  // is done — rather than leaving it to a manual tap that could otherwise
+  // fire mid-round.
+  if (match.round.session.sessionType === "MEXICANO") {
+    const [remaining, latestRound] = await Promise.all([
+      prisma.match.count({ where: { roundId: match.roundId, completed: false } }),
+      prisma.round.findFirst({
+        where: { sessionId: match.round.sessionId },
+        orderBy: { roundNumber: "desc" },
+        select: { id: true },
+      }),
+    ]);
+    if (remaining === 0 && latestRound?.id === match.roundId) {
+      await generateNextRound(match.round.sessionId);
+    }
+  }
 
   return NextResponse.json(updated);
 }
