@@ -290,6 +290,27 @@
   }
 }
 
+/* Site-wide wave background: each layer is a wide SVG tiled twice, scrolled
+   exactly one tile-width so the loop seams invisibly. */
+@keyframes wave-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.wave-layer {
+  animation-name: wave-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave-layer {
+    animation: none;
+  }
+}
+
 /* Rotates the Scoreboard screen into landscape on portrait phones/tablets. */
 @media (max-width: 900px) and (orientation: portrait) {
   .landscape-force {

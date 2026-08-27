@@ -159,7 +159,7 @@ export default function ScoreboardPage({
 
   if (match.completed) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-bg text-center">
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 text-center">
         <p className="text-sm font-bold uppercase tracking-widest text-lime-dim">
           This match is already finished
         </p>
@@ -189,7 +189,7 @@ export default function ScoreboardPage({
   const tiebreakNow = setMode && isTiebreak(live, session.gamesPerSet);
 
   return (
-    <main className="landscape-force flex min-h-dvh flex-col bg-bg px-6 py-4">
+    <main className="landscape-force flex min-h-dvh flex-col px-6 py-4">
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.back()}

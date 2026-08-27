@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat, Rubik } from "next/font/google";
 import Script from "next/script";
+import { WaveBackground } from "./WaveBackground";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -47,6 +48,7 @@ export default function RootLayout({
             __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}}catch(e){}`,
           }}
         />
+        <WaveBackground />
         {children}
       </body>
     </html>

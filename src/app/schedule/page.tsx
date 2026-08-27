@@ -118,7 +118,7 @@ function ScheduleForm() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col bg-bg pb-24 md:max-w-xl lg:max-w-2xl">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col pb-24 md:max-w-xl lg:max-w-2xl">
       <header className="glass sticky top-0 z-10 flex items-center gap-3 px-5 py-4">
         <Link href="/" className="material-symbols-outlined text-ink">
           arrow_back

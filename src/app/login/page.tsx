@@ -86,7 +86,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-bg px-6">
+    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6">
       <div className="pointer-events-none absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-lime/10 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-[10%] -right-[10%] h-[40%] w-[40%] rounded-full bg-lime-dim/5 blur-[120px]" />
       <Suspense fallback={null}>
