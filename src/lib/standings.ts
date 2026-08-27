@@ -7,6 +7,7 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
     include: {
       players: { include: { player: true } },
       rounds: { include: { matches: true } },
+      fixedPartnerships: true,
     },
   });
 
@@ -80,6 +81,26 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
     }
     row.sd = row.pointsFor - row.pointsAgainst;
     row.score = row.pointsFor + row.mBonus;
+  }
+
+  // Partners always play as one unit, so their two rows are numerically
+  // identical (same played/W-T-L/points/SD/score) — show one combined row
+  // per team instead of a duplicate row per player.
+  if (session.fixedPartners) {
+    const grouped: StandingRow[] = [];
+    const paired = new Set<string>();
+    for (const p of session.fixedPartnerships) {
+      const r1 = rows.get(p.player1Id);
+      const r2 = rows.get(p.player2Id);
+      if (!r1 || !r2) continue;
+      paired.add(p.player1Id);
+      paired.add(p.player2Id);
+      grouped.push({ ...r1, playerId: `${p.player1Id}:${p.player2Id}`, name: `${r1.name} & ${r2.name}` });
+    }
+    for (const row of rows.values()) {
+      if (!paired.has(row.playerId)) grouped.push(row);
+    }
+    return grouped;
   }
 
   return Array.from(rows.values());

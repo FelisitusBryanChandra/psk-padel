@@ -1,7 +1,7 @@
 import { computeRanks, sortStandings, type StandingRow } from "@/lib/types";
 
 function initials(name: string) {
-  const parts = name.trim().split(/\s+/);
+  const parts = name.trim().split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w[0]));
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
