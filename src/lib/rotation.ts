@@ -397,8 +397,17 @@ export async function generateNextRound(sessionId: string) {
 // partners with everyone once, matching how Americano/AYO seed a session.
 // Sit-outs within each round are still balanced by the rotation algorithm
 // when there aren't enough courts for everyone to play every round.
+//
+// Mexicano is excluded from this eager seeding: its pairing is rank-based on
+// cumulative points, so generating rounds 2+ before any result exists just
+// ranks everyone on zero. Only round 1 is seeded here; later rounds come from
+// the incremental generator once results start coming in.
 export async function generateInitialRounds(sessionId: string, playerCount: number) {
-  const initialRounds = playerCount - 1;
+  const session = await prisma.session.findUniqueOrThrow({
+    where: { id: sessionId },
+    select: { sessionType: true },
+  });
+  const initialRounds = session.sessionType === "MEXICANO" ? 1 : playerCount - 1;
   for (let i = 0; i < initialRounds; i++) {
     await generateNextRound(sessionId);
   }
