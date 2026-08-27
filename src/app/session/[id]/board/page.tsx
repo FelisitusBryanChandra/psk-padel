@@ -5,6 +5,7 @@ import { StandingsTable } from "@/app/StandingsTable";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import { Logo } from "@/app/Logo";
+import { courtLabel } from "@/lib/types";
 
 export default function BoardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -39,7 +40,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
             >
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                  Court {m.courtNumber}
+                  {courtLabel({ courtNames: session?.courtNames ?? [] }, m.courtNumber)}
                 </p>
                 <p className="text-sm text-ink">
                   {m.team1Player1.name} &amp; {m.team1Player2.name}

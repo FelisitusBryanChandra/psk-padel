@@ -10,8 +10,9 @@ export default function NewSessionPage() {
   const router = useRouter();
   const [name, setName] = useState("PSK Padel Session");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [courtName, setCourtName] = useState("");
+  const [venueName, setVenueName] = useState("");
   const [courts, setCourts] = useState(1);
+  const [courtNames, setCourtNames] = useState<string[]>([""]);
   const [dynamicCourts, setDynamicCourts] = useState(false);
   const [sessionType, setSessionType] = useState<"AMERICANO" | "MEXICANO">("AMERICANO");
   const [fixedPartners, setFixedPartners] = useState(false);
@@ -42,6 +43,19 @@ export default function NewSessionPage() {
 
   function updatePlayer(idx: number, value: string) {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? value : p)));
+  }
+
+  function setCourtCount(count: number) {
+    setCourts(count);
+    setCourtNames((prev) => {
+      const next = prev.slice(0, count);
+      while (next.length < count) next.push("");
+      return next;
+    });
+  }
+
+  function updateCourtName(idx: number, value: string) {
+    setCourtNames((prev) => prev.map((n, i) => (i === idx ? value : n)));
   }
 
   function addPlayer() {
@@ -120,8 +134,9 @@ export default function NewSessionPage() {
       body: JSON.stringify({
         name,
         date,
-        courtName: courtName.trim() || undefined,
+        venueName: venueName.trim() || undefined,
         courts,
+        courtNames: courtNames.map((n) => n.trim()),
         dynamicCourts,
         sessionType,
         fixedPartners,
@@ -189,11 +204,11 @@ export default function NewSessionPage() {
 
         <label className="flex flex-col gap-2">
           <span className="text-xs font-black uppercase tracking-widest text-ink-muted">
-            Court Name
+            Venue Name
           </span>
           <input
-            value={courtName}
-            onChange={(e) => setCourtName(e.target.value)}
+            value={venueName}
+            onChange={(e) => setVenueName(e.target.value)}
             placeholder="e.g. PSK Arena"
             className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none transition-colors focus:border-lime"
           />
@@ -208,7 +223,7 @@ export default function NewSessionPage() {
               type="number"
               min={1}
               value={courts}
-              onChange={(e) => setCourts(Number(e.target.value))}
+              onChange={(e) => setCourtCount(Number(e.target.value))}
               className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
             />
           </div>
@@ -254,6 +269,25 @@ export default function NewSessionPage() {
             </div>
           )}
         </div>
+
+        {courts > 1 && (
+          <div>
+            <span className="mb-2 block text-xs font-black uppercase tracking-widest text-ink-muted">
+              Court Names
+            </span>
+            <div className="flex flex-col gap-2">
+              {courtNames.map((n, idx) => (
+                <input
+                  key={idx}
+                  value={n}
+                  onChange={(e) => updateCourtName(idx, e.target.value)}
+                  placeholder={`Court ${idx + 1} (e.g. Garuda)`}
+                  className="neu-inset h-12 rounded-xl border border-white/5 px-4 text-base text-ink outline-none transition-colors focus:border-lime"
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <span className="mb-2 block text-xs font-black uppercase tracking-widest text-ink-muted">

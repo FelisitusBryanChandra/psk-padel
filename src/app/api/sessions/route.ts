@@ -8,8 +8,9 @@ import { findOrCreatePlayer } from "@/lib/player";
 const bodySchema = z.object({
   name: z.string().trim().min(1).max(120),
   date: z.string().min(1),
-  courtName: z.string().trim().max(120).optional(),
+  venueName: z.string().trim().max(120).optional(),
   courts: z.number().int().min(1).max(20),
+  courtNames: z.array(z.string().trim().max(60)).max(20).optional(),
   dynamicCourts: z.boolean().optional(),
   sessionType: z.enum(["AMERICANO", "MEXICANO"]).optional(),
   fixedPartners: z.boolean().optional(),
@@ -65,8 +66,9 @@ export async function POST(req: NextRequest) {
   const {
     name,
     date,
-    courtName,
+    venueName,
     courts,
+    courtNames,
     dynamicCourts,
     sessionType,
     fixedPartners,
@@ -110,8 +112,9 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         date: new Date(date),
-        courtName,
+        venueName,
         courts,
+        courtNames: (courtNames ?? []).slice(0, courts),
         dynamicCourts: dynamicCourts ?? false,
         sessionType: sessionType ?? "AMERICANO",
         fixedPartners: fixedPartners ?? false,

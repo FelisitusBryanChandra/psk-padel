@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
-const patchSchema = z.object({ courts: z.number().int().min(1).max(20) });
+const patchSchema = z.object({
+  courts: z.number().int().min(1).max(20),
+  courtNames: z.array(z.string().trim().max(60)).max(20).optional(),
+});
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -58,7 +61,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const updated = await prisma.session.update({
     where: { id },
-    data: { courts: parsed.data.courts },
+    data: {
+      courts: parsed.data.courts,
+      ...(parsed.data.courtNames !== undefined
+        ? { courtNames: parsed.data.courtNames.slice(0, parsed.data.courts) }
+        : {}),
+    },
   });
   return NextResponse.json(updated);
 }

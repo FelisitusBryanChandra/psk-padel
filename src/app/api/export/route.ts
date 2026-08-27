@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
+import { courtLabel } from "@/lib/types";
 
 function csvEscape(value: string) {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
@@ -63,7 +64,7 @@ export async function GET(req: NextRequest) {
             session.name,
             session.date.toISOString().slice(0, 10),
             String(round.roundNumber),
-            String(m.courtNumber),
+            courtLabel(session, m.courtNumber),
             m.team1Player1.name,
             m.team1Player2.name,
             m.team2Player1.name,

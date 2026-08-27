@@ -52,7 +52,8 @@ model Session {
   fixedPartners  Boolean     @default(false)
   courts         Int
   dynamicCourts  Boolean     @default(false)
-  courtName      String?
+  venueName      String?
+  courtNames     String[]    @default([])
   pointsPerMatch Int         @default(21)
   pointsPerServe Int         @default(5)
   scoringMode    ScoringMode @default(POINTS)

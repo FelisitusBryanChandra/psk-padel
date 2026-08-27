@@ -21,11 +21,20 @@ export type MatchDto = {
 
 export type RoundDto = { id: string; roundNumber: number; matches: MatchDto[] };
 
+// Falls back to "Court N" when the host hasn't named that slot.
+export function courtLabel(
+  session: { courtNames: string[] },
+  courtNumber: number
+): string {
+  return session.courtNames[courtNumber - 1]?.trim() || `Court ${courtNumber}`;
+}
+
 export type SessionDto = {
   id: string;
   name: string;
   date: string;
-  courtName: string | null;
+  venueName: string | null;
+  courtNames: string[];
   courts: number;
   dynamicCourts: boolean;
   pointsPerMatch: number;

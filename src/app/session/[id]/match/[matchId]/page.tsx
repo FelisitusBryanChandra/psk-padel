@@ -7,7 +7,7 @@ import { applyPoint, isTiebreak, pointLabel } from "@/lib/tennisScore";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
 import { rememberFinishedMatch } from "@/lib/lastFinishedMatch";
-import type { MatchDto, SessionDto } from "@/lib/types";
+import { courtLabel, type MatchDto, type SessionDto } from "@/lib/types";
 
 type LiveState = {
   team1Score: number;
@@ -18,7 +18,10 @@ type LiveState = {
   team2GamePoints: number;
 } & ServeState;
 
-type SessionConfig = Pick<SessionDto, "pointsPerServe" | "scoringMode" | "gamesPerSet" | "goldenPoint">;
+type SessionConfig = Pick<
+  SessionDto,
+  "pointsPerServe" | "scoringMode" | "gamesPerSet" | "goldenPoint" | "courtNames"
+>;
 
 export default function ScoreboardPage({
   params,
@@ -58,6 +61,7 @@ export default function ScoreboardPage({
           scoringMode: data.scoringMode,
           gamesPerSet: data.gamesPerSet,
           goldenPoint: data.goldenPoint,
+          courtNames: data.courtNames,
         });
         const found = data.rounds.flatMap((r) => r.matches).find((m) => m.id === matchId);
         if (found) {
@@ -197,7 +201,7 @@ export default function ScoreboardPage({
         </button>
         <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-ink-muted">
           <span className="material-symbols-outlined text-base">location_on</span>
-          Court {match.courtNumber}
+          {courtLabel(session, match.courtNumber)}
           <button
             onClick={() => setSwapped((s) => !s)}
             aria-label="Switch sides"

@@ -10,7 +10,7 @@ import { StandingsTable } from "@/app/StandingsTable";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import { takeFinishedMatch } from "@/lib/lastFinishedMatch";
-import type { PlayerRef, MatchDto } from "@/lib/types";
+import { courtLabel, type PlayerRef, type MatchDto } from "@/lib/types";
 
 function servingPlayer(m: MatchDto): PlayerRef {
   if (m.servingTeam === 1) {
@@ -91,6 +91,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [swapName, setSwapName] = useState("");
   const [editingCourts, setEditingCourts] = useState(false);
   const [courtsValue, setCourtsValue] = useState(1);
+  const [courtNamesValue, setCourtNamesValue] = useState<string[]>([]);
   const [savingCourts, setSavingCourts] = useState(false);
   const [editingScoreId, setEditingScoreId] = useState<string | null>(null);
   const [editScores, setEditScores] = useState({ team1: 0, team2: 0 });
@@ -242,12 +243,28 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     refresh();
   }
 
+  function setCourtsValueAndNames(count: number) {
+    setCourtsValue(count);
+    setCourtNamesValue((prev) => {
+      const next = prev.slice(0, count);
+      while (next.length < count) next.push("");
+      return next;
+    });
+  }
+
+  function updateCourtNameValue(idx: number, value: string) {
+    setCourtNamesValue((prev) => prev.map((n, i) => (i === idx ? value : n)));
+  }
+
   async function saveCourts() {
     setSavingCourts(true);
     await fetch(`/api/sessions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ courts: courtsValue }),
+      body: JSON.stringify({
+        courts: courtsValue,
+        courtNames: courtNamesValue.map((n) => n.trim()),
+      }),
     });
     setSavingCourts(false);
     setEditingCourts(false);
@@ -324,8 +341,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           </Link>
           <div className="flex-1">
             <h1 className="font-heading text-lg font-black text-ink">{session.name}</h1>
-            {session.courtName && (
-              <p className="text-xs text-ink-muted">{session.courtName}</p>
+            {session.venueName && (
+              <p className="text-xs text-ink-muted">{session.venueName}</p>
             )}
             <p className="text-xs text-ink-muted">
               {session.players.length} players &middot;{" "}
@@ -337,7 +354,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                     min={1}
                     max={20}
                     value={courtsValue}
-                    onChange={(e) => setCourtsValue(Number(e.target.value))}
+                    onChange={(e) => setCourtsValueAndNames(Number(e.target.value))}
                     className="w-10 rounded border border-lime bg-surface-low px-1 text-xs text-ink"
                   />
                   <button
@@ -361,6 +378,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   onClick={() => {
                     setEditingCourts(true);
                     setCourtsValue(session.courts);
+                    setCourtNamesValue(
+                      Array.from({ length: session.courts }, (_, i) => session.courtNames[i] ?? "")
+                    );
                   }}
                   className="underline decoration-dotted underline-offset-2"
                 >
@@ -376,6 +396,19 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 ? `${session.gamesPerSet} games/set${session.goldenPoint ? ", golden point" : ""}`
                 : `to ${session.pointsPerMatch}, serve/${session.pointsPerServe}`}
             </p>
+            {editingCourts && courtNamesValue.length > 1 && (
+              <div className="mt-1 flex flex-col gap-1">
+                {courtNamesValue.map((n, idx) => (
+                  <input
+                    key={idx}
+                    value={n}
+                    onChange={(e) => updateCourtNameValue(idx, e.target.value)}
+                    placeholder={`Court ${idx + 1} name`}
+                    className="h-7 rounded border border-outline bg-surface-low px-2 text-xs text-ink outline-none focus:border-lime"
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <ThemeToggle />
           {hasIncomplete && (
@@ -637,7 +670,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                         <div>
                           <div className="mb-1 flex items-center gap-2">
                             <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                              Court {m.courtNumber}
+                              {courtLabel(session, m.courtNumber)}
                             </span>
                             {!m.completed && (
                               <span className="flex items-center gap-1 rounded-full bg-live-bg/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-live">
