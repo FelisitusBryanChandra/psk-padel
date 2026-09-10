@@ -35,6 +35,11 @@
   --color-glow-a: rgba(0, 196, 196, 0.24);
   --color-glow-b: rgba(120, 255, 180, 0.14);
   --color-glow-c: rgba(0, 140, 255, 0.13);
+
+  --color-flame-ink: #ffb057;
+  --color-flame-fill-a: rgba(255, 90, 20, 0.24);
+  --color-flame-fill-b: rgba(255, 190, 60, 0.16);
+  --color-flame-line: rgba(255, 150, 60, 0.45);
 }
 
 /* Light mode overrides the same tokens the dark @theme block defines above;
@@ -66,6 +71,11 @@
   --color-glow-a: rgba(0, 168, 168, 0.3);
   --color-glow-b: rgba(70, 210, 140, 0.2);
   --color-glow-c: rgba(60, 150, 230, 0.18);
+
+  --color-flame-ink: #8a3a05;
+  --color-flame-fill-a: rgba(255, 120, 30, 0.34);
+  --color-flame-fill-b: rgba(255, 185, 70, 0.3);
+  --color-flame-line: rgba(196, 92, 10, 0.55);
 }
 
 .material-symbols-outlined {
@@ -218,6 +228,92 @@
   }
   50% {
     border-color: color-mix(in srgb, var(--color-lime) 55%, var(--color-surface));
+  }
+}
+
+/* Win-streak indicator on a Standings row (design handoff: PSK Padel
+   Petrol.dc.html — colors/keyframes below are taken directly from that
+   spec, not improvised). Three parts: .streak-frame is the outer wrapper
+   whose padding+drifting gradient background reads as an animated border;
+   .streak-row is the inner tinted row; .streak-badge/.streak-flame are the
+   small "N in a row" pill next to the player's name. */
+@keyframes flame-drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+@keyframes flame-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 138, 60, 0.28),
+      0 0 14px -2px rgba(255, 120, 40, 0.38);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 180, 80, 0.55),
+      0 0 22px 0 rgba(255, 110, 30, 0.6);
+  }
+}
+@keyframes flame-lick {
+  0%,
+  100% {
+    transform: scaleY(1) translateY(0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scaleY(1.35) translateY(-1px);
+    opacity: 1;
+  }
+}
+.streak-frame {
+  padding: 2px;
+  margin: 6px 8px;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #ff3d00, #ffb020, #ffe58a, #ff6a00, #ff3d00);
+  background-size: 300% 100%;
+  animation:
+    flame-drift 3.2s linear infinite,
+    flame-breathe 1.9s ease-in-out infinite;
+}
+.streak-row {
+  border-radius: 12px;
+  background: var(--color-surface);
+  background-image: linear-gradient(
+    100deg,
+    rgba(255, 90, 20, 0.16),
+    rgba(255, 190, 80, 0.07) 55%,
+    transparent
+  );
+}
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: linear-gradient(120deg, var(--color-flame-fill-a), var(--color-flame-fill-b));
+  border: 1px solid var(--color-flame-line);
+}
+.streak-flame {
+  display: inline-block;
+  width: 7px;
+  height: 11px;
+  border-radius: 60% 60% 50% 50% / 72% 72% 40% 40%;
+  background: linear-gradient(180deg, #ffe08a 0%, #ff9a2e 45%, #ff4d17 100%);
+  transform-origin: 50% 100%;
+  animation: flame-lick 900ms ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .streak-frame {
+    animation: none;
+  }
+  .streak-flame {
+    animation: none;
   }
 }
 

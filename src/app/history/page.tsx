@@ -105,6 +105,11 @@ export default function HistoryPage() {
                     })}{" "}
                     &middot; {h.court}
                   </span>
+                  {h.title && (
+                    <span className="rounded-full bg-live-bg/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-live">
+                      {h.title}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-1 truncate text-sm font-semibold text-ink">
                   {h.team1[0]} &amp; {h.team1[1]}

@@ -10,6 +10,7 @@ import { StandingsTable } from "@/app/StandingsTable";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import { takeFinishedMatch } from "@/lib/lastFinishedMatch";
+import { computeMatchTitle } from "@/lib/matchTitle";
 import { courtLabel, type PlayerRef, type MatchDto } from "@/lib/types";
 
 function servingPlayer(m: MatchDto): PlayerRef {
@@ -787,6 +788,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                             <p className="text-sm font-bold uppercase tracking-widest text-lime-dim">
                               Finished
                             </p>
+                            {(() => {
+                              const title = computeMatchTitle(
+                                session.scoringMode,
+                                session.scoringMode === "SET" ? m.team1Games : m.team1Score,
+                                session.scoringMode === "SET" ? m.team2Games : m.team2Score,
+                                session.scoringMode === "SET"
+                                  ? session.gamesPerSet
+                                  : session.pointsPerMatch
+                              );
+                              return (
+                                title && (
+                                  <span className="rounded-full bg-live-bg/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-live">
+                                    {title}
+                                  </span>
+                                )
+                              );
+                            })()}
                             <button
                               onClick={() => reopenMatch(m.id)}
                               className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-ink-muted"

@@ -62,6 +62,7 @@ export type StandingRow = {
   missedRounds: number;
   mBonus: number;
   score: number;
+  winStreak: number;
 };
 
 export function sortStandings(rows: StandingRow[]): StandingRow[] {

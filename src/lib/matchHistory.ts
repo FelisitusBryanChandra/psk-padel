@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { communityFilter, type AuthPayload } from "@/lib/auth";
 import { courtLabel } from "@/lib/types";
+import { computeMatchTitle, type MatchTitle } from "@/lib/matchTitle";
 
 export type MatchHistoryEntry = {
   matchId: string;
@@ -11,6 +12,7 @@ export type MatchHistoryEntry = {
   team1: [string, string];
   team2: [string, string];
   score: string;
+  title: MatchTitle;
 };
 
 /**
@@ -42,6 +44,7 @@ export async function computeMatchHistory(auth: AuthPayload | null): Promise<Mat
         if (!m.completed) continue;
         const [team1Total, team2Total] =
           session.scoringMode === "SET" ? [m.team1Games, m.team2Games] : [m.team1Score, m.team2Score];
+        const target = session.scoringMode === "SET" ? session.gamesPerSet : session.pointsPerMatch;
         entries.push({
           matchId: m.id,
           date: session.date.toISOString(),
@@ -51,6 +54,7 @@ export async function computeMatchHistory(auth: AuthPayload | null): Promise<Mat
           team1: [m.team1Player1.name, m.team1Player2.name],
           team2: [m.team2Player1.name, m.team2Player2.name],
           score: `${team1Total}–${team2Total}`,
+          title: computeMatchTitle(session.scoringMode as "POINTS" | "SET", team1Total, team2Total, target),
         });
       }
     }

@@ -6,12 +6,16 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
     where: { id: sessionId },
     include: {
       players: { include: { player: true } },
-      rounds: { include: { matches: true } },
+      rounds: { orderBy: { roundNumber: "asc" }, include: { matches: true } },
       fixedPartnerships: true,
     },
   });
 
   const rows = new Map<string, StandingRow>();
+  // Trailing run of wins per player, most-recent-result-last as rounds are
+  // walked in order — reset to 0 on a loss/tie, incremented on a win, so
+  // it always reflects the *current* streak once the loop finishes.
+  const streaks = new Map<string, number>();
   for (const sp of session.players) {
     rows.set(sp.playerId, {
       playerId: sp.playerId,
@@ -26,7 +30,9 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
       missedRounds: 0,
       mBonus: 0,
       score: 0,
+      winStreak: 0,
     });
+    streaks.set(sp.playerId, 0);
   }
 
   for (const round of session.rounds) {
@@ -47,9 +53,14 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
           if (!row) continue;
           row.pointsFor += ownScore;
           row.pointsAgainst += oppScore;
-          if (ownScore > oppScore) row.wins += 1;
-          else if (ownScore < oppScore) row.losses += 1;
-          else row.ties += 1;
+          if (ownScore > oppScore) {
+            row.wins += 1;
+            streaks.set(id, (streaks.get(id) ?? 0) + 1);
+          } else {
+            if (ownScore < oppScore) row.losses += 1;
+            else row.ties += 1;
+            streaks.set(id, 0);
+          }
         }
       };
 
@@ -58,6 +69,10 @@ export async function computeStandings(sessionId: string): Promise<StandingRow[]
       applyTeam(team1, team1Total, team2Total);
       applyTeam(team2, team2Total, team1Total);
     }
+  }
+
+  for (const row of rows.values()) {
+    row.winStreak = streaks.get(row.playerId) ?? 0;
   }
 
   const activePlayerIds = new Set(session.players.filter((sp) => sp.active).map((sp) => sp.playerId));
