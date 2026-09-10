@@ -11,6 +11,7 @@ function LoginForm() {
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPasscode, setShowPasscode] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,15 +51,27 @@ function LoginForm() {
         <label className="text-center text-xs font-black uppercase tracking-[0.2em] text-lime-dim">
           Enter Secure Passcode
         </label>
-        <input
-          type="password"
-          inputMode="text"
-          autoFocus
-          value={passcode}
-          onChange={(e) => setPasscode(e.target.value)}
-          placeholder="Passcode"
-          className="neu-inset w-full rounded-xl border border-white/5 px-4 py-4 text-center text-lg text-ink outline-none transition-colors focus:border-lime"
-        />
+        <div className="relative">
+          <input
+            type={showPasscode ? "text" : "password"}
+            inputMode="text"
+            autoFocus
+            value={passcode}
+            onChange={(e) => setPasscode(e.target.value)}
+            placeholder="Passcode"
+            className="neu-inset w-full rounded-xl border border-white/5 px-4 py-4 pr-12 text-center text-lg text-ink outline-none transition-colors focus:border-lime"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPasscode((v) => !v)}
+            aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
+          >
+            <span className="material-symbols-outlined text-xl">
+              {showPasscode ? "visibility_off" : "visibility"}
+            </span>
+          </button>
+        </div>
 
         {error && <p className="text-center text-sm text-live">{error}</p>}
 
