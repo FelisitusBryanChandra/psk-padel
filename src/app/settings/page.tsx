@@ -7,22 +7,17 @@ import { SideNav } from "@/app/SideNav";
 import { ThemeToggle } from "@/app/ThemeToggle";
 import { SETTINGS_STORAGE_KEY } from "@/lib/settings";
 
+// Every row here must actually gate real behavior somewhere — see
+// readRespectMaxPoints() in src/lib/settings.ts and its use in the
+// Scoreboard's adjust(). The previous auto-advance/sound/haptics/sharing/
+// push rows were removed: they only persisted a preference value with
+// nothing in the app reading it back.
 type SettingsState = {
   respectMaxPoints: boolean;
-  autoAdvance: boolean;
-  sound: boolean;
-  haptics: boolean;
-  publicBoard: boolean;
-  push: boolean;
 };
 
 const DEFAULTS: SettingsState = {
   respectMaxPoints: true,
-  autoAdvance: true,
-  sound: false,
-  haptics: true,
-  publicBoard: true,
-  push: true,
 };
 
 const GROUPS: { title: string; rows: [keyof SettingsState, string, string][] }[] = [
@@ -34,16 +29,6 @@ const GROUPS: { title: string; rows: [keyof SettingsState, string, string][] }[]
         "Respect max points",
         "Score entry stops at the match's point target instead of counting past it.",
       ],
-      ["autoAdvance", "Auto-advance rounds", "Move to the next round when all courts finish."],
-      ["sound", "Sound on point", "Short tick when a score changes."],
-      ["haptics", "Haptics", "Vibrate on score entry."],
-    ],
-  },
-  {
-    title: "Sharing",
-    rows: [
-      ["publicBoard", "Public scoreboard link", "Anyone with the code can watch live standings."],
-      ["push", "Push notifications", "Round starts and final standings."],
     ],
   },
 ];
