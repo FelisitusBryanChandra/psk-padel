@@ -7,6 +7,7 @@ import { applyPoint, isTiebreak, pointLabel } from "@/lib/tennisScore";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
 import { rememberFinishedMatch } from "@/lib/lastFinishedMatch";
+import { readRespectMaxPoints } from "@/lib/settings";
 import { courtLabel, type MatchDto, type SessionDto } from "@/lib/types";
 
 type LiveState = {
@@ -20,7 +21,7 @@ type LiveState = {
 
 type SessionConfig = Pick<
   SessionDto,
-  "pointsPerServe" | "scoringMode" | "gamesPerSet" | "goldenPoint" | "courtNames"
+  "pointsPerServe" | "pointsPerMatch" | "scoringMode" | "gamesPerSet" | "goldenPoint" | "courtNames"
 >;
 
 export default function ScoreboardPage({
@@ -58,6 +59,7 @@ export default function ScoreboardPage({
       .then((data: SessionDto) => {
         setSession({
           pointsPerServe: data.pointsPerServe,
+          pointsPerMatch: data.pointsPerMatch,
           scoringMode: data.scoringMode,
           gamesPerSet: data.gamesPerSet,
           goldenPoint: data.goldenPoint,
@@ -82,9 +84,12 @@ export default function ScoreboardPage({
   }, [id, matchId]);
 
   function adjust(team: 1 | 2, delta: 1 | -1) {
+    const max = readRespectMaxPoints() ? (session?.pointsPerMatch ?? Infinity) : Infinity;
     setLive((prev) => {
-      const team1Score = team === 1 ? Math.max(0, prev.team1Score + delta) : prev.team1Score;
-      const team2Score = team === 2 ? Math.max(0, prev.team2Score + delta) : prev.team2Score;
+      const team1Score =
+        team === 1 ? Math.min(max, Math.max(0, prev.team1Score + delta)) : prev.team1Score;
+      const team2Score =
+        team === 2 ? Math.min(max, Math.max(0, prev.team2Score + delta)) : prev.team2Score;
       const prevTotal = prev.team1Score + prev.team2Score;
       const newTotal = team1Score + team2Score;
       const serve = nextServeState(prev, prevTotal, newTotal, session?.pointsPerServe ?? 5);

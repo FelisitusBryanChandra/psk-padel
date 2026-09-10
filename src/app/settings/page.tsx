@@ -5,10 +5,10 @@ import { BottomNav } from "@/app/BottomNav";
 import { Logo } from "@/app/Logo";
 import { SideNav } from "@/app/SideNav";
 import { ThemeToggle } from "@/app/ThemeToggle";
-
-const STORAGE_KEY = "psk_settings";
+import { SETTINGS_STORAGE_KEY } from "@/lib/settings";
 
 type SettingsState = {
+  respectMaxPoints: boolean;
   autoAdvance: boolean;
   sound: boolean;
   haptics: boolean;
@@ -17,6 +17,7 @@ type SettingsState = {
 };
 
 const DEFAULTS: SettingsState = {
+  respectMaxPoints: true,
   autoAdvance: true,
   sound: false,
   haptics: true,
@@ -28,6 +29,11 @@ const GROUPS: { title: string; rows: [keyof SettingsState, string, string][] }[]
   {
     title: "Match day",
     rows: [
+      [
+        "respectMaxPoints",
+        "Respect max points",
+        "Score entry stops at the match's point target instead of counting past it.",
+      ],
       ["autoAdvance", "Auto-advance rounds", "Move to the next round when all courts finish."],
       ["sound", "Sound on point", "Short tick when a score changes."],
       ["haptics", "Haptics", "Vibrate on score entry."],
@@ -48,7 +54,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (raw) setSettings({ ...DEFAULTS, ...JSON.parse(raw) });
     } catch {
       // ignore malformed/unavailable storage
@@ -59,7 +65,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     } catch {
       // ignore unavailable storage
     }
