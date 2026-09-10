@@ -204,7 +204,7 @@ export default function NewSessionPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col pb-28 md:max-w-xl lg:max-w-2xl">
-      <header className="glass sticky top-0 z-10 flex items-center justify-between px-5 py-4">
+      <header className="glass glass-header sticky top-0 z-10 flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
           <Logo className="h-6 w-auto text-ink" />
           <h1 className="font-heading text-xl font-black tracking-tight text-ink">PSK Padel</h1>

@@ -110,6 +110,17 @@
     inset 0 1px 0 var(--shadow-neu-light);
 }
 
+/* .glass's shadow recipe (a tight contact shadow plus a big soft ambient
+   layer) is built for a floating card, not a full-width sticky bar — the
+   ambient layer bleeds out along the whole width and reads as a heavy
+   rectangular smear on a header. Pair `glass glass-header` on any sticky
+   top bar to keep the tint/blur/border but drop just the ambient layer. */
+.glass-header {
+  box-shadow:
+    0 2px 8px -2px var(--shadow-neu-dark),
+    inset 0 1px 0 var(--shadow-neu-light);
+}
+
 /* Neumorphism: soft dual-shadow relief for small tactile controls sitting
    flush on a surface (toggles, steppers, pressable buttons). --shadow-neu-*
    are themed in the @theme / .light blocks above. */
