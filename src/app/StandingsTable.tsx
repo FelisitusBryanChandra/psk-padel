@@ -52,91 +52,53 @@ export function StandingsTable({
             {sorted.map((r, idx) => {
               const onFire = r.winStreak >= 3;
 
-              const rankChip = (
-                <div
-                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-sm font-black ${
-                    ranks[idx] <= 3 ? MEDAL_STYLE[ranks[idx] - 1] : "bg-outline/30 text-ink-muted"
-                  }`}
-                >
-                  {ranks[idx]}
-                </div>
-              );
-
-              const playerCell = (
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-highest">
-                    <span className="text-xs font-black text-ink/50">{initials(r.name)}</span>
-                  </div>
-                  <span className="font-bold text-ink">{r.name}</span>
-                  {onFire && (
-                    <div className="streak-badge">
-                      <span className="streak-flame" />
-                      <span className="font-heading text-[11px] font-extrabold tracking-wide text-flame-ink tabular-nums">
-                        {r.winStreak} in a row
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-
-              const wtlCell = (
-                <div className="text-center tabular-nums text-ink-muted">
-                  {r.wins}-{r.ties}-{r.losses}
-                </div>
-              );
-
-              const sdCell = (
-                <div
-                  className={`text-center font-bold tabular-nums ${
-                    r.sd > 0 ? "text-lime-dim" : r.sd < 0 ? "text-live" : "text-ink-muted"
-                  }`}
-                >
-                  {r.sd > 0 ? `+${r.sd}` : r.sd}
-                </div>
-              );
-
-              const mCell = (
-                <div className="text-center font-bold tabular-nums text-accent-orange">
-                  {r.mBonus ? `+${r.mBonus}` : ""}
-                </div>
-              );
-
-              const scoreCell = (
-                <div className="text-right font-heading text-lg font-black tabular-nums text-ink">
-                  {r.score}
-                </div>
-              );
-
-              if (onFire) {
-                return (
-                  <tr key={r.playerId}>
-                    <td colSpan={6} className="p-0">
-                      <div className="streak-frame">
-                        <div
-                          className="streak-row grid items-center gap-2 px-4 py-3"
-                          style={{ gridTemplateColumns: "36px minmax(0,1fr) 62px 46px 44px 54px" }}
-                        >
-                          {rankChip}
-                          {playerCell}
-                          {wtlCell}
-                          {sdCell}
-                          {mCell}
-                          {scoreCell}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }
-
               return (
-                <tr key={r.playerId} className="transition-colors hover:bg-surface-high">
-                  <td className="px-4 py-3 text-center">{rankChip}</td>
-                  <td className="px-2 py-3">{playerCell}</td>
-                  <td className="px-2 py-3">{wtlCell}</td>
-                  <td className="px-2 py-3">{sdCell}</td>
-                  <td className="px-2 py-3">{mCell}</td>
-                  <td className="px-4 py-3">{scoreCell}</td>
+                <tr
+                  key={r.playerId}
+                  className={onFire ? "streak-row" : "transition-colors hover:bg-surface-high"}
+                >
+                  <td className="px-4 py-3 text-center">
+                    <div
+                      className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-sm font-black ${
+                        ranks[idx] <= 3 ? MEDAL_STYLE[ranks[idx] - 1] : "bg-outline/30 text-ink-muted"
+                      }`}
+                    >
+                      {ranks[idx]}
+                    </div>
+                  </td>
+                  <td className="min-w-0 px-2 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-highest">
+                        <span className="text-xs font-black text-ink/50">{initials(r.name)}</span>
+                      </div>
+                      <span className="min-w-0 flex-1 truncate font-bold text-ink">{r.name}</span>
+                      {onFire && (
+                        <div className="streak-badge flex-shrink-0">
+                          <span className="streak-flame" />
+                          <span className="font-heading text-[11px] font-extrabold tracking-wide text-flame-ink tabular-nums">
+                            <span className="hidden sm:inline">{r.winStreak} in a row</span>
+                            <span className="sm:hidden">{r.winStreak}x</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-2 py-3 text-center tabular-nums text-ink-muted">
+                    {r.wins}-{r.ties}-{r.losses}
+                  </td>
+                  <td
+                    className={`px-2 py-3 text-center font-bold tabular-nums ${
+                      r.sd > 0 ? "text-lime-dim" : r.sd < 0 ? "text-live" : "text-ink-muted"
+                    }`}
+                  >
+                    {r.sd > 0 ? `+${r.sd}` : r.sd}
+                  </td>
+                  <td className="px-2 py-3 text-center font-bold tabular-nums text-accent-orange">
+                    {r.mBonus ? `+${r.mBonus}` : ""}
+                  </td>
+                  <td className="px-4 py-3 text-right font-heading text-lg font-black tabular-nums text-ink">
+                    {r.score}
+                  </td>
                 </tr>
               );
             })}

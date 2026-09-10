@@ -233,18 +233,13 @@
 
 /* Win-streak indicator on a Standings row (design handoff: PSK Padel
    Petrol.dc.html — colors/keyframes below are taken directly from that
-   spec, not improvised). Three parts: .streak-frame is the outer wrapper
-   whose padding+drifting gradient background reads as an animated border;
-   .streak-row is the inner tinted row; .streak-badge/.streak-flame are the
-   small "N in a row" pill next to the player's name. */
-@keyframes flame-drift {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 300% 50%;
-  }
-}
+   spec, not improvised). Applied to the real <tr> (not a synthetic
+   wrapper — an earlier version restyled the row as a standalone CSS grid
+   to match the mockup's div-based technique, but that meant its column
+   widths didn't track the rest of the table, so a long fixed-partner name
+   wrapped and collided with the badge/W-T-L columns on narrow screens).
+   .streak-row tints the row and pulses via flame-breathe; .streak-badge/
+   .streak-flame are the small "N in a row" pill next to the player's name. */
 @keyframes flame-breathe {
   0%,
   100% {
@@ -269,25 +264,14 @@
     opacity: 1;
   }
 }
-.streak-frame {
-  padding: 2px;
-  margin: 6px 8px;
-  border-radius: 14px;
-  background: linear-gradient(100deg, #ff3d00, #ffb020, #ffe58a, #ff6a00, #ff3d00);
-  background-size: 300% 100%;
-  animation:
-    flame-drift 3.2s linear infinite,
-    flame-breathe 1.9s ease-in-out infinite;
-}
 .streak-row {
-  border-radius: 12px;
-  background: var(--color-surface);
   background-image: linear-gradient(
     100deg,
     rgba(255, 90, 20, 0.16),
     rgba(255, 190, 80, 0.07) 55%,
     transparent
   );
+  animation: flame-breathe 1.9s ease-in-out infinite;
 }
 .streak-badge {
   display: flex;
@@ -303,13 +287,14 @@
   display: inline-block;
   width: 7px;
   height: 11px;
+  flex-shrink: 0;
   border-radius: 60% 60% 50% 50% / 72% 72% 40% 40%;
   background: linear-gradient(180deg, #ffe08a 0%, #ff9a2e 45%, #ff4d17 100%);
   transform-origin: 50% 100%;
   animation: flame-lick 900ms ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .streak-frame {
+  .streak-row {
     animation: none;
   }
   .streak-flame {
