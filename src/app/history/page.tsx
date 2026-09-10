@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BottomNav } from "@/app/BottomNav";
 import { Logo } from "@/app/Logo";
 import { SideNav } from "@/app/SideNav";
+import { Spinner } from "@/app/Spinner";
 import { ThemeToggle } from "@/app/ThemeToggle";
 import type { MatchHistoryEntry } from "@/lib/matchHistory";
 
@@ -30,22 +31,38 @@ function HistorySkeleton() {
 }
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<MatchHistoryEntry[] | null>(null);
+  const [entries, setEntries] = useState<MatchHistoryEntry[] | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<Filter>("All");
 
-  useEffect(() => {
-    fetch("/api/history")
-      .then((r) => r.json())
-      .then(setHistory);
-  }, []);
+  const sessionTypeParam = filter === "All" ? "" : `&sessionType=${filter.toUpperCase()}`;
 
-  if (!history) {
-    return <HistorySkeleton />;
+  // Filter change starts the page over — offset/hasMore are only meaningful
+  // for the current filter's own result set.
+  useEffect(() => {
+    setEntries(null);
+    fetch(`/api/history?offset=0${sessionTypeParam}`)
+      .then((r) => r.json())
+      .then((page: { entries: MatchHistoryEntry[]; hasMore: boolean }) => {
+        setEntries(page.entries);
+        setHasMore(page.hasMore);
+      });
+  }, [sessionTypeParam]);
+
+  async function loadMore() {
+    if (!entries) return;
+    setLoadingMore(true);
+    const res = await fetch(`/api/history?offset=${entries.length}${sessionTypeParam}`);
+    const page: { entries: MatchHistoryEntry[]; hasMore: boolean } = await res.json();
+    setEntries((prev) => [...(prev ?? []), ...page.entries]);
+    setHasMore(page.hasMore);
+    setLoadingMore(false);
   }
 
-  const filtered = history.filter(
-    (h) => filter === "All" || h.sessionType === filter.toUpperCase()
-  );
+  if (!entries) {
+    return <HistorySkeleton />;
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
@@ -71,7 +88,7 @@ export default function HistoryPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {entries.length === 0 ? (
         <div className="mt-12 flex flex-col items-center text-center">
           <span className="material-symbols-outlined mb-4 text-7xl text-surface-highest">
             history
@@ -83,7 +100,7 @@ export default function HistoryPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filtered.map((h) => (
+          {entries.map((h) => (
             <div
               key={h.matchId}
               className="glass-strong grid grid-cols-[4px_1fr_auto] items-center gap-4 rounded-xl p-4"
@@ -121,6 +138,16 @@ export default function HistoryPage() {
               <div className="font-heading text-xl font-bold tabular-nums text-ink">{h.score}</div>
             </div>
           ))}
+          {hasMore && (
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="neu-raised flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-ink-muted transition-colors disabled:opacity-60"
+            >
+              {loadingMore && <Spinner className="text-lg" />}
+              {loadingMore ? "Loading..." : "Load More"}
+            </button>
+          )}
         </div>
       )}
 
