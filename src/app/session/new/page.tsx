@@ -6,6 +6,47 @@ import Link from "next/link";
 import { Spinner } from "@/app/Spinner";
 import { Logo } from "@/app/Logo";
 
+function NumberStepper({
+  label,
+  value,
+  min,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div className="neu-raised flex flex-col items-center gap-2 rounded-xl p-3">
+      <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
+        {label}
+      </span>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - 1))}
+          aria-label={`Decrease ${label}`}
+          className="neu-raised flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold text-ink-muted active:shadow-none"
+        >
+          &minus;
+        </button>
+        <span className="min-w-6 text-center font-heading text-lg font-bold tabular-nums text-lime">
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={() => onChange(value + 1)}
+          aria-label={`Increase ${label}`}
+          className="neu-raised flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold text-ink-muted active:shadow-none"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function NewSessionPage() {
   const router = useRouter();
   const [name, setName] = useState("PSK Padel Session");
@@ -215,56 +256,29 @@ export default function NewSessionPage() {
         </label>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-              Courts
-            </span>
-            <input
-              type="number"
-              min={1}
-              value={courts}
-              onChange={(e) => setCourtCount(Number(e.target.value))}
-              className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
-            />
-          </div>
+          <NumberStepper label="Courts" value={courts} min={1} onChange={setCourtCount} />
           {scoringMode === "POINTS" ? (
             <>
-              <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                  Max Pts
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  value={pointsPerMatch}
-                  onChange={(e) => setPointsPerMatch(Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
-                />
-              </div>
-              <div className="neu-raised flex flex-col items-center gap-1 rounded-xl p-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                  Serves
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  value={pointsPerServe}
-                  onChange={(e) => setPointsPerServe(Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
-                />
-              </div>
+              <NumberStepper
+                label="Max Pts"
+                value={pointsPerMatch}
+                min={1}
+                onChange={setPointsPerMatch}
+              />
+              <NumberStepper
+                label="Serves"
+                value={pointsPerServe}
+                min={1}
+                onChange={setPointsPerServe}
+              />
             </>
           ) : (
-            <div className="neu-raised col-span-2 flex flex-col items-center gap-1 rounded-xl p-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                Games per Set
-              </span>
-              <input
-                type="number"
-                min={1}
+            <div className="col-span-2">
+              <NumberStepper
+                label="Games per Set"
                 value={gamesPerSet}
-                onChange={(e) => setGamesPerSet(Number(e.target.value))}
-                className="w-full bg-transparent text-center font-heading text-lg font-bold text-lime outline-none"
+                min={1}
+                onChange={setGamesPerSet}
               />
             </div>
           )}

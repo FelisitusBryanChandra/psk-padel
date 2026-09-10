@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/app/BottomNav";
 import { Logo } from "@/app/Logo";
+import { SideNav } from "@/app/SideNav";
 import { ThemeToggle } from "@/app/ThemeToggle";
 import type { CommunityStats } from "@/lib/communityStats";
 import { LogoutButton } from "./LogoutButton";
@@ -167,6 +168,7 @@ export default function ProfilePage() {
         <LogoutButton />
       </div>
 
+      <SideNav />
       <BottomNav />
     </main>
   );

@@ -6,7 +6,9 @@ import { useEffect, useRef, useState } from "react";
 
 const SIDE_ITEMS = [
   { href: "/", label: "Home", icon: "home" },
+  { href: "/history", label: "History", icon: "history" },
   { href: "/profile", label: "Profile", icon: "person" },
+  { href: "/settings", label: "Settings", icon: "settings" },
 ] as const;
 
 const DIAL_OPTIONS = [
@@ -45,20 +47,25 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="glass-strong fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 items-center justify-between px-9 pb-3 pt-4 md:max-w-xl lg:max-w-2xl">
-      <Link
-        href={SIDE_ITEMS[0].href}
-        className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-          pathname === SIDE_ITEMS[0].href ? "text-lime" : "text-ink-muted"
-        }`}
-      >
-        <span className="material-symbols-outlined text-2xl">{SIDE_ITEMS[0].icon}</span>
-        {SIDE_ITEMS[0].label}
-      </Link>
+    <nav className="glass-strong fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 items-center justify-between px-6 pb-3 pt-4 md:hidden">
+      <div className="flex items-center gap-5">
+        {SIDE_ITEMS.slice(0, 2).map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
+              pathname === item.href ? "text-lime" : "text-ink-muted"
+            }`}
+          >
+            <span className="material-symbols-outlined text-2xl">{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </div>
 
       {/* Positioned against `nav` itself (already a containing block, since
           it's `fixed`) rather than sharing the flex row with the side
-          links — "Home" and "Profile" aren't the same text width, so
+          links — the two flanking groups aren't the same width, so
           justify-around/between would otherwise pull this off the true
           center. */}
       <div ref={wrapperRef} className="absolute bottom-11 left-1/2 -translate-x-1/2">
@@ -98,15 +105,20 @@ export function BottomNav() {
         </button>
       </div>
 
-      <Link
-        href={SIDE_ITEMS[1].href}
-        className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-          pathname === SIDE_ITEMS[1].href ? "text-lime" : "text-ink-muted"
-        }`}
-      >
-        <span className="material-symbols-outlined text-2xl">{SIDE_ITEMS[1].icon}</span>
-        {SIDE_ITEMS[1].label}
-      </Link>
+      <div className="flex items-center gap-5">
+        {SIDE_ITEMS.slice(2).map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
+              pathname === item.href ? "text-lime" : "text-ink-muted"
+            }`}
+          >
+            <span className="material-symbols-outlined text-2xl">{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </div>
     </nav>
   );
 }

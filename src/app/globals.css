@@ -1,55 +1,71 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #17151c;
-  --color-surface: #211f28;
-  --color-surface-low: #1c1a22;
-  --color-surface-high: #2d2a35;
-  --color-surface-highest: #3a3641;
+  --color-bg: #06222b;
+  --color-bg-2: #04161d;
+  --color-surface: #0c3340;
+  --color-surface-low: #082631;
+  --color-surface-high: #113c4b;
+  --color-surface-highest: #17495a;
 
-  --color-ink: #f1efe9;
-  --color-ink-muted: #b3aebd;
-  --color-outline: #45414f;
+  --color-ink: #eefaff;
+  --color-ink-muted: #93bcc8;
+  --color-outline: rgba(255, 255, 255, 0.11);
 
-  --color-lime: #caf300;
-  --color-lime-dim: #b0d500;
-  --color-on-lime: #1a1d0a;
+  --color-lime: #2ff0bf;
+  --color-lime-dim: #5cf5cc;
+  --color-on-lime: #04231d;
 
-  --color-live: #ff5449;
-  --color-live-bg: #93000a;
+  --color-live: #ff7a6b;
+  --color-live-bg: #5c1f1b;
 
-  --color-gold: #ffd700;
-  --color-silver: #c0c0c0;
-  --color-bronze: #cd7f32;
+  --color-gold: #ffd75e;
+  --color-silver: #cbd9de;
+  --color-bronze: #e29a5a;
 
-  --color-accent-blue: #6fb8ff;
-  --color-accent-orange: #ffb238;
+  --color-accent-blue: #5cf2e0;
+  --color-accent-orange: #ffcc5c;
 
   --font-heading: var(--font-heading), sans-serif;
   --font-body: var(--font-body), sans-serif;
 
-  --shadow-neu-dark: rgba(0, 0, 0, 0.55);
-  --shadow-neu-light: rgba(255, 255, 255, 0.035);
+  --shadow-neu-dark: rgba(2, 14, 18, 0.62);
+  --shadow-neu-light: rgba(255, 255, 255, 0.07);
+
+  --color-glow-a: rgba(0, 196, 196, 0.24);
+  --color-glow-b: rgba(120, 255, 180, 0.14);
+  --color-glow-c: rgba(0, 140, 255, 0.13);
 }
 
 /* Light mode overrides the same tokens the dark @theme block defines above;
    toggling the `light` class on <html> is all ThemeToggle needs to do. */
 .light {
-  --color-bg: #f7f3e9;
-  --color-surface: #fffcf5;
-  --color-surface-low: #f1ecdd;
-  --color-surface-high: #e8e1cc;
-  --color-surface-highest: #ded5b9;
+  --color-bg: #cfe3e4;
+  --color-bg-2: #bad4d6;
+  --color-surface: #f6fcfc;
+  --color-surface-low: #e7f2f3;
+  --color-surface-high: #e7f2f3;
+  --color-surface-highest: #d8e9ea;
 
-  --color-ink: #26221a;
-  --color-ink-muted: #6e6552;
-  --color-outline: #ded3ba;
+  --color-ink: #08262e;
+  --color-ink-muted: #40606a;
+  --color-outline: rgba(8, 40, 48, 0.12);
 
-  --color-accent-blue: #1f7ae0;
-  --color-accent-orange: #c97800;
+  --color-lime: #22c9a2;
+  --color-lime-dim: #00655a;
+  --color-on-lime: #06231d;
 
-  --shadow-neu-dark: rgba(38, 34, 26, 0.14);
-  --shadow-neu-light: rgba(255, 255, 255, 0.9);
+  --color-live: #c22a1c;
+
+  --color-accent-blue: #00706a;
+  --color-accent-orange: #8f6200;
+
+  --shadow-neu-dark: rgba(8, 50, 60, 0.16);
+  --shadow-neu-light: rgba(255, 255, 255, 0.95);
+
+  --color-glow-a: rgba(0, 168, 168, 0.3);
+  --color-glow-b: rgba(70, 210, 140, 0.2);
+  --color-glow-c: rgba(60, 150, 230, 0.18);
 }
 
 .material-symbols-outlined {
@@ -288,23 +304,6 @@
   .page-enter {
     animation: none;
   }
-}
-
-/* Site-wide wave background: each layer is a wide SVG tiled twice, scrolled
-   exactly one tile-width so the loop seams invisibly. */
-@keyframes wave-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.wave-layer {
-  animation-name: wave-scroll;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  will-change: transform;
 }
 
 /* Rotates the Scoreboard screen into landscape on portrait phones/tablets. */

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BottomNav } from "./BottomNav";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { Logo } from "./Logo";
+import { SideNav } from "./SideNav";
 import { ThemeToggle } from "./ThemeToggle";
 
 type SessionListItem = {
@@ -207,6 +208,7 @@ export default function HomePage() {
           </div>
         </section>
       ))}
+      <SideNav />
       <BottomNav />
     </main>
   );

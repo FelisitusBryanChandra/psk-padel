@@ -6,9 +6,9 @@ function initials(name: string) {
 }
 
 const MEDAL_STYLE = [
-  "bg-gradient-to-br from-gold to-yellow-700 text-black",
+  "bg-gradient-to-br from-gold to-amber-800 text-black",
   "bg-gradient-to-br from-silver to-slate-500 text-black",
-  "bg-gradient-to-br from-bronze to-amber-800 text-black",
+  "bg-gradient-to-br from-bronze to-orange-950 text-black",
 ];
 
 export function StandingsTable({

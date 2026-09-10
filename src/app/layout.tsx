@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Montserrat, Rubik } from "next/font/google";
+import { Outfit, Instrument_Sans } from "next/font/google";
 import Script from "next/script";
 import { WaveBackground } from "./WaveBackground";
 import "./globals.css";
 
-const montserrat = Montserrat({
+const outfit = Outfit({
   variable: "--font-heading",
-  weight: ["700", "800", "900"],
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
 });
 
-const rubik = Rubik({
+const instrumentSans = Instrument_Sans({
   variable: "--font-body",
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
 });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
       // The theme-no-flash script below stamps `light` onto <html> before
       // hydration, so this one element is expected to differ from the server.
       suppressHydrationWarning
-      className={`${montserrat.variable} ${rubik.variable} h-full antialiased`}
+      className={`${outfit.variable} ${instrumentSans.variable} h-full antialiased`}
     >
       <head>
         <link

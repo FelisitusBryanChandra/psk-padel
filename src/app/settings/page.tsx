@@ -1,0 +1,116 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { BottomNav } from "@/app/BottomNav";
+import { Logo } from "@/app/Logo";
+import { SideNav } from "@/app/SideNav";
+import { ThemeToggle } from "@/app/ThemeToggle";
+
+const STORAGE_KEY = "psk_settings";
+
+type SettingsState = {
+  autoAdvance: boolean;
+  sound: boolean;
+  haptics: boolean;
+  publicBoard: boolean;
+  push: boolean;
+};
+
+const DEFAULTS: SettingsState = {
+  autoAdvance: true,
+  sound: false,
+  haptics: true,
+  publicBoard: true,
+  push: true,
+};
+
+const GROUPS: { title: string; rows: [keyof SettingsState, string, string][] }[] = [
+  {
+    title: "Match day",
+    rows: [
+      ["autoAdvance", "Auto-advance rounds", "Move to the next round when all courts finish."],
+      ["sound", "Sound on point", "Short tick when a score changes."],
+      ["haptics", "Haptics", "Vibrate on score entry."],
+    ],
+  },
+  {
+    title: "Sharing",
+    rows: [
+      ["publicBoard", "Public scoreboard link", "Anyone with the code can watch live standings."],
+      ["push", "Push notifications", "Round starts and final standings."],
+    ],
+  },
+];
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<SettingsState>(DEFAULTS);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setSettings({ ...DEFAULTS, ...JSON.parse(raw) });
+    } catch {
+      // ignore malformed/unavailable storage
+    }
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch {
+      // ignore unavailable storage
+    }
+  }, [settings, loaded]);
+
+  function toggle(key: keyof SettingsState) {
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
+      <header className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Logo className="h-8 w-auto text-ink" />
+          <h1 className="font-heading text-2xl font-black tracking-tight text-ink">Settings</h1>
+        </div>
+        <ThemeToggle />
+      </header>
+
+      <div className="flex flex-col gap-6">
+        {GROUPS.map((g) => (
+          <section key={g.title} className="glass rounded-xl px-5 py-1">
+            <h2 className="pb-1 pt-4 text-xs font-black uppercase tracking-widest text-ink-muted">
+              {g.title}
+            </h2>
+            {g.rows.map(([key, label, hint]) => (
+              <label
+                key={key}
+                className="flex items-center gap-4 border-b border-outline py-4 last:border-0"
+              >
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold text-ink">{label}</span>
+                  <span className="mt-0.5 block text-xs text-ink-muted">{hint}</span>
+                </span>
+                <span className="sort-toggle sort-toggle-stateful">
+                  <input
+                    type="checkbox"
+                    className="sort-toggle-input"
+                    checked={settings[key]}
+                    onChange={() => toggle(key)}
+                  />
+                  <span className="sort-toggle-indicator" />
+                </span>
+              </label>
+            ))}
+          </section>
+        ))}
+      </div>
+
+      <SideNav />
+      <BottomNav />
+    </main>
+  );
+}
