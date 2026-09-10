@@ -174,7 +174,10 @@ export default function ScoreboardPage({
             : `${match.team1Score}–${match.team2Score}`}
         </p>
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            rememberFinishedMatch(match.id);
+            router.back();
+          }}
           className="neu-raised rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest text-ink-muted transition-shadow active:shadow-none"
         >
           Back
@@ -197,7 +200,10 @@ export default function ScoreboardPage({
     <main className="landscape-force flex min-h-dvh flex-col px-6 py-4">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            rememberFinishedMatch(match.id);
+            router.back();
+          }}
           aria-label="Back to session"
           className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-ink-muted"
         >

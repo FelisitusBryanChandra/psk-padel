@@ -1,11 +1,12 @@
 const KEY = "psk:lastFinishedMatch";
 
 /**
- * Finishing a match navigates back to the session page, which fetches its data
- * client-side -- so at browser scroll-restoration time the match list isn't in
- * the DOM yet and the page lands at the top. The scoreboard records the match
- * it just finished here so the session page can scroll back to it once the
- * list has actually rendered.
+ * Leaving the scoreboard (via Back, or after Finish Match) navigates back to
+ * the session page, which fetches its data client-side -- so at browser
+ * scroll-restoration time the match list isn't in the DOM yet and the page
+ * lands at the top. The scoreboard records which match it was showing here
+ * so the session page can scroll back to it once the list has actually
+ * rendered.
  */
 export function rememberFinishedMatch(matchId: string) {
   try {
