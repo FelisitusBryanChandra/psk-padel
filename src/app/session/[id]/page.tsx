@@ -428,7 +428,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
         <div
           ref={chipRowRef}
-          className="no-scrollbar mb-2 flex snap-x gap-2 overflow-x-auto scroll-smooth"
+          className="no-scrollbar -mt-2 mb-2 flex snap-x gap-2 overflow-x-auto scroll-smooth py-2"
         >
           {session.players.map(({ player }) => (
             <div key={player.id} className="shrink-0 snap-start">
