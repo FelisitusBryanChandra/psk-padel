@@ -61,6 +61,7 @@ function HomeSkeleton() {
 export default function HomePage() {
   const [sessions, setSessions] = useState<SessionListItem[] | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [tab, setTab] = useState<"ongoing" | "finished">("ongoing");
 
   const refresh = useCallback(async () => {
     const [sessionsRes, meRes] = await Promise.all([fetch("/api/sessions"), fetch("/api/me")]);
@@ -76,8 +77,15 @@ export default function HomePage() {
     return <HomeSkeleton />;
   }
 
+  // Not-started sessions (no rounds generated yet, e.g. still open for
+  // self-registration) count as "ongoing" alongside LIVE ones -- they're
+  // not finished, so they don't belong in the Finished tab.
+  const tabSessions = sessions.filter((s) =>
+    tab === "ongoing" ? s.status !== "COMPLETED" : s.status === "COMPLETED"
+  );
+
   const groups = new Map<string, SessionListItem[]>();
-  for (const s of sessions) {
+  for (const s of tabSessions) {
     const key = s.date.slice(0, 7); // YYYY-MM
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(s);
@@ -102,6 +110,27 @@ export default function HomePage() {
         </p>
       </section>
 
+      {sessions.length > 0 && (
+        <div className="mb-6 flex gap-4 border-b border-outline/30 pb-2">
+          <button
+            onClick={() => setTab("ongoing")}
+            className={`border-b-2 px-1 pb-2 text-xs font-black uppercase tracking-widest ${
+              tab === "ongoing" ? "border-lime text-lime" : "border-transparent text-ink-muted"
+            }`}
+          >
+            Ongoing
+          </button>
+          <button
+            onClick={() => setTab("finished")}
+            className={`border-b-2 px-1 pb-2 text-xs font-black uppercase tracking-widest ${
+              tab === "finished" ? "border-lime text-lime" : "border-transparent text-ink-muted"
+            }`}
+          >
+            Finished
+          </button>
+        </div>
+      )}
+
       {sessions.length === 0 && (
         <div className="mt-12 flex flex-col items-center text-center">
           <span className="material-symbols-outlined mb-4 text-7xl text-surface-highest">
@@ -110,6 +139,22 @@ export default function HomePage() {
           <h3 className="font-heading text-lg font-bold text-ink">No Sessions Yet</h3>
           <p className="mt-2 max-w-xs text-sm text-ink-muted">
             Ready to dominate the court? Start your first Americano session today.
+          </p>
+        </div>
+      )}
+
+      {sessions.length > 0 && tabSessions.length === 0 && (
+        <div className="mt-12 flex flex-col items-center text-center">
+          <span className="material-symbols-outlined mb-4 text-7xl text-surface-highest">
+            {tab === "ongoing" ? "sports_tennis" : "task_alt"}
+          </span>
+          <h3 className="font-heading text-lg font-bold text-ink">
+            {tab === "ongoing" ? "Nothing Ongoing" : "No Finished Sessions"}
+          </h3>
+          <p className="mt-2 max-w-xs text-sm text-ink-muted">
+            {tab === "ongoing"
+              ? "Every session is wrapped up. Start a new one when you're ready."
+              : "Sessions show up here once they're completed."}
           </p>
         </div>
       )}
