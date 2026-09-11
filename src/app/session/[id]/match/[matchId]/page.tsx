@@ -48,6 +48,11 @@ export default function ScoreboardPage({
   const [finishing, setFinishing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [swapped, setSwapped] = useState(false);
+  // Set once a point locally completes the match (Respect max points is on
+  // and a side just reached the games target) -- the finalize call runs in
+  // the background, and this switches to the same "finished" view a match
+  // that was already completed on load shows, without waiting on a refetch.
+  const [justFinished, setJustFinished] = useState(false);
   // Snapshots taken before each awarded point. A tennis point can't be undone
   // by decrementing: it may have rolled a game (points reset, games +1, serve
   // flipped) or closed the set, so only the whole prior state restores it.
@@ -84,13 +89,16 @@ export default function ScoreboardPage({
   }, [id, matchId]);
 
   function adjust(team: 1 | 2, delta: 1 | -1) {
-    const max = readRespectMaxPoints() ? (session?.pointsPerMatch ?? Infinity) : Infinity;
+    // Race-to-N is a shared target: every point comes off the other team, so
+    // the cap is on team1Score + team2Score together (e.g. 11-10 at a cap of
+    // 21), not on each team's own score independently (which would let both
+    // sides reach the cap at once, like 21-21).
+    const cap = readRespectMaxPoints() ? (session?.pointsPerMatch ?? Infinity) : Infinity;
     setLive((prev) => {
-      const team1Score =
-        team === 1 ? Math.min(max, Math.max(0, prev.team1Score + delta)) : prev.team1Score;
-      const team2Score =
-        team === 2 ? Math.min(max, Math.max(0, prev.team2Score + delta)) : prev.team2Score;
       const prevTotal = prev.team1Score + prev.team2Score;
+      if (delta > 0 && prevTotal >= cap) return prev;
+      const team1Score = team === 1 ? Math.max(0, prev.team1Score + delta) : prev.team1Score;
+      const team2Score = team === 2 ? Math.max(0, prev.team2Score + delta) : prev.team2Score;
       const newTotal = team1Score + team2Score;
       const serve = nextServeState(prev, prevTotal, newTotal, session?.pointsPerServe ?? 5);
       // `serve` may just be `prev` unchanged (including its old scores) when
@@ -101,12 +109,34 @@ export default function ScoreboardPage({
   }
 
   function scorePoint(team: 1 | 2) {
-    if (!session) return;
+    if (!match || !session) return;
+    const cap = readRespectMaxPoints();
+    // Same rule as the Points-mode cap in adjust(): once a side has already
+    // reached the games target, there's nothing left to play, so block
+    // further scoring instead of letting games climb past it.
+    if (cap && (live.team1Games >= session.gamesPerSet || live.team2Games >= session.gamesPerSet)) {
+      return;
+    }
     setPointHistory((h) => [...h, live]);
-    setLive((prev) => ({
-      ...prev,
-      ...applyPoint(prev, team, { gamesPerSet: session.gamesPerSet, goldenPoint: session.goldenPoint }),
-    }));
+    const result = applyPoint(live, team, {
+      gamesPerSet: session.gamesPerSet,
+      goldenPoint: session.goldenPoint,
+    });
+    setLive((prev) => ({ ...prev, ...result }));
+    if (cap && result.setWinner) {
+      void finalizeInBackground(result.team1Games, result.team2Games);
+    }
+  }
+
+  async function finalizeInBackground(team1Games: number, team2Games: number) {
+    if (!match) return;
+    setJustFinished(true);
+    await fetch(`/api/matches/${match.id}/finalize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ team1Games, team2Games }),
+    });
+    rememberFinishedMatch(match.id);
   }
 
   function undoPoint() {
@@ -162,16 +192,14 @@ export default function ScoreboardPage({
     return <LoadingModal open />;
   }
 
-  if (match.completed) {
+  if (match.completed || justFinished) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 text-center">
-        <p className="text-sm font-bold uppercase tracking-widest text-lime-dim">
-          This match is already finished
-        </p>
+        <p className="text-sm font-bold uppercase tracking-widest text-live">FINISHED!</p>
         <p className="font-heading text-4xl font-black text-ink">
           {session.scoringMode === "SET"
-            ? `${match.team1Games}–${match.team2Games}`
-            : `${match.team1Score}–${match.team2Score}`}
+            ? `${live.team1Games}–${live.team2Games}`
+            : `${live.team1Score}–${live.team2Score}`}
         </p>
         <button
           onClick={() => {
