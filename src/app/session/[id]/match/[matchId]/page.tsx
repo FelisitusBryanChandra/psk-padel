@@ -111,10 +111,10 @@ export default function ScoreboardPage({
   function scorePoint(team: 1 | 2) {
     if (!match || !session) return;
     const cap = readRespectMaxPoints();
-    // Same rule as the Points-mode cap in adjust(): once a side has already
-    // reached the games target, there's nothing left to play, so block
-    // further scoring instead of letting games climb past it.
-    if (cap && (live.team1Games >= session.gamesPerSet || live.team2Games >= session.gamesPerSet)) {
+    // Same rule as the Points-mode cap in adjust(): gamesPerSet is a shared
+    // target on the combined games played, so block further scoring once
+    // team1Games + team2Games reaches it, tied or not.
+    if (cap && live.team1Games + live.team2Games >= session.gamesPerSet) {
       return;
     }
     setPointHistory((h) => [...h, live]);
@@ -123,7 +123,7 @@ export default function ScoreboardPage({
       goldenPoint: session.goldenPoint,
     });
     setLive((prev) => ({ ...prev, ...result }));
-    if (cap && result.setWinner) {
+    if (cap && result.setComplete) {
       void finalizeInBackground(result.team1Games, result.team2Games);
     }
   }

@@ -40,7 +40,7 @@ export function applySetPoint(
   state: SetScoreState,
   winner: 1 | 2,
   config: SetConfig
-): SetScoreState & { setWinner: 1 | 2 | null; gameJustCompleted: boolean } {
+): SetScoreState & { setComplete: boolean; gameJustCompleted: boolean } {
   const tiebreak = isTiebreak(state, config.gamesPerSet);
   const team1GamePoints = winner === 1 ? state.team1GamePoints + 1 : state.team1GamePoints;
   const team2GamePoints = winner === 2 ? state.team2GamePoints + 1 : state.team2GamePoints;
@@ -50,14 +50,19 @@ export function applySetPoint(
     : regularGameWinner(team1GamePoints, team2GamePoints, config.goldenPoint);
 
   if (gameWinner === null) {
-    return { team1Games: state.team1Games, team2Games: state.team2Games, team1GamePoints, team2GamePoints, setWinner: null, gameJustCompleted: false };
+    return { team1Games: state.team1Games, team2Games: state.team2Games, team1GamePoints, team2GamePoints, setComplete: false, gameJustCompleted: false };
   }
 
   const team1Games = state.team1Games + (gameWinner === 1 ? 1 : 0);
   const team2Games = state.team2Games + (gameWinner === 2 ? 1 : 0);
-  const setWinner = team1Games >= config.gamesPerSet ? 1 : team2Games >= config.gamesPerSet ? 2 : null;
+  // gamesPerSet is a shared target on the COMBINED games played (same model
+  // as the Points-mode total cap), not "first side to reach it" -- the set
+  // ends once team1Games + team2Games hits the target, no matter which side
+  // is ahead (a tie at the target is a valid final result, same as Points
+  // mode allows a tied combined split).
+  const setComplete = team1Games + team2Games >= config.gamesPerSet;
 
-  return { team1Games, team2Games, team1GamePoints: 0, team2GamePoints: 0, setWinner, gameJustCompleted: true };
+  return { team1Games, team2Games, team1GamePoints: 0, team2GamePoints: 0, setComplete, gameJustCompleted: true };
 }
 
 /**
@@ -70,7 +75,7 @@ export function applyPoint(
   state: SetScoreState & ServeState,
   winner: 1 | 2,
   config: SetConfig
-): SetScoreState & ServeState & { setWinner: 1 | 2 | null } {
+): SetScoreState & ServeState & { setComplete: boolean } {
   const result = applySetPoint(state, winner, config);
   const serve = result.gameJustCompleted ? flipOnce(state, true) : state;
   return {
@@ -81,7 +86,7 @@ export function applyPoint(
     servingTeam: serve.servingTeam,
     team1ServerSlot: serve.team1ServerSlot,
     team2ServerSlot: serve.team2ServerSlot,
-    setWinner: result.setWinner,
+    setComplete: result.setComplete,
   };
 }
 

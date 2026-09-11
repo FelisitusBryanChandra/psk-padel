@@ -304,14 +304,19 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   async function saveEditScore(matchId: string) {
     if (!session) return;
 
-    // Same "Respect max points" rule as the Scoreboard: a race-to-N total
-    // can't exceed the shared target, and a tennis set isn't over until one
-    // side actually reaches the games target -- this is the manual editor
-    // that let an unfinished 2-2 (out of 4 games) get saved as FINISHED.
+    // Same "Respect max points" rule as the Scoreboard: gamesPerSet (SET) and
+    // pointsPerMatch (POINTS) are both shared targets on the COMBINED total,
+    // not a per-side max -- this is the manual editor that let an unfinished
+    // 2-2 (out of 4 games) get saved as FINISHED.
     if (readRespectMaxPoints()) {
       if (session.scoringMode === "SET") {
-        if (Math.max(editScores.team1, editScores.team2) < session.gamesPerSet) {
-          setEditScoreError(`One side needs at least ${session.gamesPerSet} games to finish the set.`);
+        const total = editScores.team1 + editScores.team2;
+        if (total > session.gamesPerSet) {
+          setEditScoreError(`Combined games can't exceed ${session.gamesPerSet}.`);
+          return;
+        }
+        if (total < session.gamesPerSet) {
+          setEditScoreError(`Combined games must reach ${session.gamesPerSet} to finish the set.`);
           return;
         }
       } else if (editScores.team1 + editScores.team2 > session.pointsPerMatch) {
