@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { findOrCreatePlayer } from "@/lib/player";
 import { rebalanceUpcomingRounds } from "@/lib/rotation";
 import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
-import { isRegistrationExpired } from "@/lib/registration";
 
 const bodySchema = z.object({ name: z.string().trim().min(1).max(80) });
 
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
-  const registrationClosed = session.rounds.length > 0 || isRegistrationExpired(session.date);
+  const registrationClosed = session.rounds.length > 0;
   if (!auth && registrationClosed) {
     return NextResponse.json(
       { error: "Registration for this session has closed" },

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
-import { isRegistrationExpired } from "@/lib/registration";
 import type { PlayerRef } from "@/lib/types";
 
 type RegisterSessionInfo = {
@@ -81,8 +80,7 @@ export function RegisterClient({
   }
 
   const isStarted = session.rounds.length > 0;
-  const registrationClosed =
-    (isStarted || isRegistrationExpired(new Date(session.date))) && !isAuthenticated;
+  const registrationClosed = isStarted && !isAuthenticated;
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col pb-28 md:max-w-xl lg:max-w-2xl">
@@ -112,9 +110,7 @@ export function RegisterClient({
         )}
         {registrationClosed ? (
           <p className="rounded-xl border-2 border-dashed border-outline p-4 text-center text-sm text-ink-muted">
-            {isStarted
-              ? "This session has already started — ask the organizer to add you."
-              : "Registration closed the day before this session — ask the organizer to add you."}
+            This session has already started — ask the organizer to add you.
           </p>
         ) : (
           <form onSubmit={addPlayer} className="flex flex-col gap-2">
