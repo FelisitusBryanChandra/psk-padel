@@ -11,6 +11,7 @@ import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { useSessionData } from "@/app/useSessionData";
 import { takeFinishedMatch } from "@/lib/lastFinishedMatch";
 import { computeMatchTitle } from "@/lib/matchTitle";
+import { readRespectMaxPoints } from "@/lib/settings";
 import { courtLabel, type PlayerRef, type MatchDto } from "@/lib/types";
 
 function servingPlayer(m: MatchDto): PlayerRef {
@@ -97,6 +98,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [editingScoreId, setEditingScoreId] = useState<string | null>(null);
   const [editScores, setEditScores] = useState({ team1: 0, team2: 0 });
   const [savingScore, setSavingScore] = useState(false);
+  const [editScoreError, setEditScoreError] = useState("");
   const [reshuffling, setReshuffling] = useState<{ matchId: string; slot: MatchSlot } | null>(
     null
   );
@@ -291,6 +293,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
   function startEditScore(m: MatchDto) {
     setEditingScoreId(m.id);
+    setEditScoreError("");
     setEditScores(
       session?.scoringMode === "SET"
         ? { team1: m.team1Games, team2: m.team2Games }
@@ -299,9 +302,28 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   }
 
   async function saveEditScore(matchId: string) {
+    if (!session) return;
+
+    // Same "Respect max points" rule as the Scoreboard: a race-to-N total
+    // can't exceed the shared target, and a tennis set isn't over until one
+    // side actually reaches the games target -- this is the manual editor
+    // that let an unfinished 2-2 (out of 4 games) get saved as FINISHED.
+    if (readRespectMaxPoints()) {
+      if (session.scoringMode === "SET") {
+        if (Math.max(editScores.team1, editScores.team2) < session.gamesPerSet) {
+          setEditScoreError(`One side needs at least ${session.gamesPerSet} games to finish the set.`);
+          return;
+        }
+      } else if (editScores.team1 + editScores.team2 > session.pointsPerMatch) {
+        setEditScoreError(`Combined score can't exceed ${session.pointsPerMatch}.`);
+        return;
+      }
+    }
+
+    setEditScoreError("");
     setSavingScore(true);
     const body =
-      session?.scoringMode === "SET"
+      session.scoringMode === "SET"
         ? { team1Games: editScores.team1, team2Games: editScores.team2 }
         : { team1Score: editScores.team1, team2Score: editScores.team2 };
     await fetch(`/api/matches/${matchId}/finalize`, {
@@ -716,44 +738,54 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                           )}
                         </div>
                         {editingScoreId === m.id ? (
-                          <div className="flex items-center gap-1">
-                            <input
-                              autoFocus
-                              type="number"
-                              value={editScores.team1}
-                              onChange={(e) =>
-                                setEditScores((s) => ({ ...s, team1: Number(e.target.value) }))
-                              }
-                              className="w-12 rounded-lg border border-lime bg-surface-low px-1 py-1 text-center font-heading text-lg font-black tabular-nums text-lime"
-                            />
-                            <span className="text-ink-muted">&ndash;</span>
-                            <input
-                              type="number"
-                              value={editScores.team2}
-                              onChange={(e) =>
-                                setEditScores((s) => ({ ...s, team2: Number(e.target.value) }))
-                              }
-                              className="w-12 rounded-lg border border-lime bg-surface-low px-1 py-1 text-center font-heading text-lg font-black tabular-nums text-lime"
-                            />
-                            <button
-                              onClick={() => saveEditScore(m.id)}
-                              disabled={savingScore}
-                              aria-label="Save score"
-                              className="ml-1 flex h-6 w-6 items-center justify-center text-lime disabled:opacity-40"
-                            >
-                              {savingScore ? (
-                                <Spinner className="text-xl" />
-                              ) : (
-                                <span className="material-symbols-outlined text-xl">check</span>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => setEditingScoreId(null)}
-                              aria-label="Cancel edit"
-                              className="material-symbols-outlined text-xl text-ink-muted"
-                            >
-                              close
-                            </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-1">
+                              <input
+                                autoFocus
+                                type="number"
+                                value={editScores.team1}
+                                onChange={(e) =>
+                                  setEditScores((s) => ({ ...s, team1: Number(e.target.value) }))
+                                }
+                                className="w-12 rounded-lg border border-lime bg-surface-low px-1 py-1 text-center font-heading text-lg font-black tabular-nums text-lime"
+                              />
+                              <span className="text-ink-muted">&ndash;</span>
+                              <input
+                                type="number"
+                                value={editScores.team2}
+                                onChange={(e) =>
+                                  setEditScores((s) => ({ ...s, team2: Number(e.target.value) }))
+                                }
+                                className="w-12 rounded-lg border border-lime bg-surface-low px-1 py-1 text-center font-heading text-lg font-black tabular-nums text-lime"
+                              />
+                              <button
+                                onClick={() => saveEditScore(m.id)}
+                                disabled={savingScore}
+                                aria-label="Save score"
+                                className="ml-1 flex h-6 w-6 items-center justify-center text-lime disabled:opacity-40"
+                              >
+                                {savingScore ? (
+                                  <Spinner className="text-xl" />
+                                ) : (
+                                  <span className="material-symbols-outlined text-xl">check</span>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingScoreId(null);
+                                  setEditScoreError("");
+                                }}
+                                aria-label="Cancel edit"
+                                className="material-symbols-outlined text-xl text-ink-muted"
+                              >
+                                close
+                              </button>
+                            </div>
+                            {editScoreError && (
+                              <p className="max-w-[12rem] text-right text-[10px] text-live">
+                                {editScoreError}
+                              </p>
+                            )}
                           </div>
                         ) : (
                           <button
