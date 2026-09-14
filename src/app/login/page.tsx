@@ -65,7 +65,7 @@ function LoginForm() {
             type="button"
             onClick={() => setShowPasscode((v) => !v)}
             aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
+            className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-ink-muted"
           >
             <span className="material-symbols-outlined text-xl">
               {showPasscode ? "visibility_off" : "visibility"}
