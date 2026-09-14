@@ -45,7 +45,7 @@ export default function RootLayout({
           id="theme-no-flash"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}var a=localStorage.getItem('psk_accent_theme');if(a&&a!=='mint'){document.documentElement.setAttribute('data-accent',a)}}catch(e){}`,
+            __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}var a=localStorage.getItem('psk_accent_theme');if(a&&a!=='mint'){document.documentElement.setAttribute('data-accent',a)}var b=localStorage.getItem('psk_base_theme');if(b&&b!=='petrol'){document.documentElement.setAttribute('data-base',b)}}catch(e){}`,
           }}
         />
         <WaveBackground />

@@ -78,6 +78,68 @@
   --color-flame-line: rgba(196, 92, 10, 0.55);
 }
 
+/* Base color themes: swap the structural neutrals (bg/surface tiers, ink,
+   outline, neu-shadows) that everything else sits on top of -- deliberately
+   disjoint from the accent tokens below (lime/glow/flame), so a base and an
+   accent combine freely with no property ever set by both. "petrol" is the
+   original palette baked into @theme/.light above and needs no block here.
+   Same data-base attribute + .light-scoped pairing as data-accent, and the
+   same rule: a new base needs both a globals.css block AND a registry entry
+   in src/lib/theme.ts, not one alone. */
+[data-base="slate"] {
+  --color-bg: #14181d;
+  --color-bg-2: #0d1015;
+  --color-surface: #1c2128;
+  --color-surface-low: #171b21;
+  --color-surface-high: #262c35;
+  --color-surface-highest: #2f3540;
+  --color-ink: #eef1f5;
+  --color-ink-muted: #9aa4b2;
+  --color-outline: rgba(255, 255, 255, 0.1);
+  --shadow-neu-dark: rgba(2, 4, 8, 0.55);
+  --shadow-neu-light: rgba(255, 255, 255, 0.05);
+}
+.light[data-base="slate"] {
+  --color-bg: #e3e6ea;
+  --color-bg-2: #d3d8de;
+  --color-surface: #f8f9fb;
+  --color-surface-low: #ebedf1;
+  --color-surface-high: #ebedf1;
+  --color-surface-highest: #dde1e6;
+  --color-ink: #12161c;
+  --color-ink-muted: #4a5560;
+  --color-outline: rgba(10, 14, 20, 0.12);
+  --shadow-neu-dark: rgba(20, 30, 40, 0.14);
+  --shadow-neu-light: rgba(255, 255, 255, 0.9);
+}
+
+[data-base="charcoal"] {
+  --color-bg: #1a1614;
+  --color-bg-2: #110d0c;
+  --color-surface: #241e1b;
+  --color-surface-low: #1d1815;
+  --color-surface-high: #2e2622;
+  --color-surface-highest: #382e29;
+  --color-ink: #f5efe8;
+  --color-ink-muted: #b8a99a;
+  --color-outline: rgba(255, 255, 255, 0.1);
+  --shadow-neu-dark: rgba(5, 3, 2, 0.55);
+  --shadow-neu-light: rgba(255, 255, 255, 0.05);
+}
+.light[data-base="charcoal"] {
+  --color-bg: #ece3d8;
+  --color-bg-2: #ddd0c0;
+  --color-surface: #faf6f0;
+  --color-surface-low: #f1e9df;
+  --color-surface-high: #f1e9df;
+  --color-surface-highest: #e5d9c9;
+  --color-ink: #241a10;
+  --color-ink-muted: #6b5b47;
+  --color-outline: rgba(30, 20, 10, 0.12);
+  --shadow-neu-dark: rgba(40, 30, 20, 0.16);
+  --shadow-neu-light: rgba(255, 255, 255, 0.9);
+}
+
 /* Accent color themes: swap the brand tokens (--color-lime/-dim/-on-lime,
    used everywhere via bg-lime/text-lime/text-on-lime) and the ambient glow
    tokens WaveBackground reads, without touching structural tokens (surface/

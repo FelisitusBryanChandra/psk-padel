@@ -45,3 +45,47 @@ export function applyAccentTheme(theme: AccentTheme) {
     // ignore unavailable storage
   }
 }
+
+// Base color themes -- the structural neutrals (bg/surface tiers, ink,
+// outline, neu-shadows), a separate axis from the accent above: see the
+// matching [data-base="..."] blocks in globals.css. Same registry/CSS
+// pairing rule as ACCENT_THEMES.
+export const BASE_THEMES = [
+  { id: "petrol", label: "Petrol", swatch: "#06222b" },
+  { id: "slate", label: "Slate", swatch: "#14181d" },
+  { id: "charcoal", label: "Charcoal", swatch: "#1a1614" },
+] as const;
+
+export type BaseTheme = (typeof BASE_THEMES)[number]["id"];
+
+export const BASE_THEME_STORAGE_KEY = "psk_base_theme";
+
+const DEFAULT_BASE: BaseTheme = "petrol";
+
+function isBaseTheme(value: string | null): value is BaseTheme {
+  return BASE_THEMES.some((t) => t.id === value);
+}
+
+export function readBaseTheme(): BaseTheme {
+  try {
+    const raw = localStorage.getItem(BASE_THEME_STORAGE_KEY);
+    return isBaseTheme(raw) ? raw : DEFAULT_BASE;
+  } catch {
+    return DEFAULT_BASE;
+  }
+}
+
+// "petrol" is the palette baked into globals.css with no [data-base]
+// selector, same reasoning as applyAccentTheme's "mint" case.
+export function applyBaseTheme(theme: BaseTheme) {
+  if (theme === DEFAULT_BASE) {
+    document.documentElement.removeAttribute("data-base");
+  } else {
+    document.documentElement.setAttribute("data-base", theme);
+  }
+  try {
+    localStorage.setItem(BASE_THEME_STORAGE_KEY, theme);
+  } catch {
+    // ignore unavailable storage
+  }
+}

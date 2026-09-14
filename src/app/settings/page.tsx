@@ -6,7 +6,16 @@ import { Logo } from "@/app/Logo";
 import { SideNav } from "@/app/SideNav";
 import { ThemeToggle } from "@/app/ThemeToggle";
 import { SETTINGS_STORAGE_KEY } from "@/lib/settings";
-import { ACCENT_THEMES, applyAccentTheme, readAccentTheme, type AccentTheme } from "@/lib/theme";
+import {
+  ACCENT_THEMES,
+  applyAccentTheme,
+  readAccentTheme,
+  type AccentTheme,
+  BASE_THEMES,
+  applyBaseTheme,
+  readBaseTheme,
+  type BaseTheme,
+} from "@/lib/theme";
 
 // Every row here must actually gate real behavior somewhere — see
 // readRespectMaxPoints() in src/lib/settings.ts and its use in the
@@ -38,6 +47,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>(DEFAULTS);
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState<AccentTheme>("mint");
+  const [base, setBase] = useState<BaseTheme>("petrol");
 
   useEffect(() => {
     try {
@@ -47,6 +57,7 @@ export default function SettingsPage() {
       // ignore malformed/unavailable storage
     }
     setAccent(readAccentTheme());
+    setBase(readBaseTheme());
     setLoaded(true);
   }, []);
 
@@ -68,6 +79,11 @@ export default function SettingsPage() {
     applyAccentTheme(theme);
   }
 
+  function selectBase(theme: BaseTheme) {
+    setBase(theme);
+    applyBaseTheme(theme);
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
       <header className="mb-6 flex items-center justify-between">
@@ -83,6 +99,27 @@ export default function SettingsPage() {
           <h2 className="pb-1 pt-4 text-xs font-black uppercase tracking-widest text-ink-muted">
             Appearance
           </h2>
+          <div className="flex items-center gap-4 border-b border-outline py-4 last:border-0">
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-ink">Base color</span>
+              <span className="mt-0.5 block text-xs text-ink-muted">
+                The background/surface palette. Applies to both light and dark mode.
+              </span>
+            </span>
+            <div className="flex items-center gap-2">
+              {BASE_THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => selectBase(t.id)}
+                  aria-label={t.label}
+                  className={`h-7 w-7 rounded-full transition-transform active:scale-90 ${
+                    base === t.id ? "ring-2 ring-offset-2 ring-offset-surface ring-ink" : ""
+                  }`}
+                  style={{ background: t.swatch }}
+                />
+              ))}
+            </div>
+          </div>
           <div className="flex items-center gap-4 border-b border-outline py-4 last:border-0">
             <span className="flex-1">
               <span className="block text-sm font-semibold text-ink">Accent color</span>
