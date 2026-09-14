@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AUTH_COOKIE, communityFilter, verifySessionToken } from "@/lib/auth";
+import { getDefaultCommunityId } from "@/lib/community";
 import { prisma } from "@/lib/prisma";
 import { generateInitialRounds } from "@/lib/rotation";
 import { findOrCreatePlayer } from "@/lib/player";
@@ -106,6 +107,11 @@ export async function POST(req: NextRequest) {
   }
 
   const auth = await verifySessionToken(req.cookies.get(AUTH_COOKIE)?.value);
+  // Members' sessions inherit their own community; everyone else (admin, or
+  // no member community on the account) falls into the shared default so no
+  // session is ever left untagged.
+  const communityId =
+    auth?.role === "member" && auth.communityId ? auth.communityId : await getDefaultCommunityId();
 
   const session = await prisma.$transaction(async (tx) => {
     const created = await tx.session.create({
@@ -123,7 +129,7 @@ export async function POST(req: NextRequest) {
         scoringMode: scoringMode ?? "POINTS",
         gamesPerSet: gamesPerSet || 4,
         goldenPoint: goldenPoint ?? true,
-        communityId: auth?.role === "member" ? auth.communityId : undefined,
+        communityId,
       },
     });
 

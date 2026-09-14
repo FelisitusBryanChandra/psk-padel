@@ -62,6 +62,7 @@ export default function HomePage() {
   const [sessions, setSessions] = useState<SessionListItem[] | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [tab, setTab] = useState<"ongoing" | "finished">("ongoing");
+  const [communityFilter, setCommunityFilter] = useState<string | "all">("all");
 
   const refresh = useCallback(async () => {
     const [sessionsRes, meRes] = await Promise.all([fetch("/api/sessions"), fetch("/api/me")]);
@@ -77,12 +78,21 @@ export default function HomePage() {
     return <HomeSkeleton />;
   }
 
+  // Every distinct community code currently in the list, for the admin-only
+  // filter row below -- hidden entirely once there's nothing to filter
+  // between (a single community, or no admin view of codes at all).
+  const communities = Array.from(
+    new Set(sessions.map((s) => s.communityCode).filter((c): c is string => Boolean(c)))
+  ).sort();
+
   // Not-started sessions (no rounds generated yet, e.g. still open for
   // self-registration) count as "ongoing" alongside LIVE ones -- they're
   // not finished, so they don't belong in the Finished tab.
-  const tabSessions = sessions.filter((s) =>
-    tab === "ongoing" ? s.status !== "COMPLETED" : s.status === "COMPLETED"
-  );
+  const tabSessions = sessions.filter((s) => {
+    const matchesTab = tab === "ongoing" ? s.status !== "COMPLETED" : s.status === "COMPLETED";
+    const matchesCommunity = communityFilter === "all" || s.communityCode === communityFilter;
+    return matchesTab && matchesCommunity;
+  });
 
   const groups = new Map<string, SessionListItem[]>();
   for (const s of tabSessions) {
@@ -128,6 +138,34 @@ export default function HomePage() {
           >
             Finished
           </button>
+        </div>
+      )}
+
+      {isAdmin && communities.length > 1 && (
+        <div className="mb-6 -mt-2 flex flex-wrap gap-2">
+          <button
+            onClick={() => setCommunityFilter("all")}
+            className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+              communityFilter === "all"
+                ? "bg-lime text-on-lime"
+                : "bg-surface-highest text-ink-muted"
+            }`}
+          >
+            All
+          </button>
+          {communities.map((code) => (
+            <button
+              key={code}
+              onClick={() => setCommunityFilter(code)}
+              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                communityFilter === code
+                  ? "bg-lime text-on-lime"
+                  : "bg-surface-highest text-ink-muted"
+              }`}
+            >
+              #{code}
+            </button>
+          ))}
         </div>
       )}
 
