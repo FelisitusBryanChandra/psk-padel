@@ -26,6 +26,8 @@ function HistorySkeleton() {
           <div key={i} className="glass-strong h-20 animate-pulse rounded-xl" />
         ))}
       </div>
+      <SideNav />
+      <BottomNav />
     </main>
   );
 }

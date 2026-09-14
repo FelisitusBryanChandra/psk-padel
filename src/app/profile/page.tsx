@@ -43,6 +43,9 @@ function ProfileSkeleton() {
         <div className="mb-3 neu-inset h-20 animate-pulse rounded-xl" />
         <div className="glass h-40 animate-pulse rounded-xl" />
       </div>
+
+      <SideNav />
+      <BottomNav />
     </main>
   );
 }

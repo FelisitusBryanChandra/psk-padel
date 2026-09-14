@@ -1,124 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
-const SIDE_ITEMS = [
+const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
+  { href: "/session/start", label: "New", icon: "add_circle" },
   { href: "/history", label: "History", icon: "history" },
   { href: "/profile", label: "Profile", icon: "person" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ] as const;
 
-const DIAL_OPTIONS = [
-  {
-    href: "/schedule?mode=import",
-    label: "Import",
-    icon: "content_paste",
-  },
-  {
-    href: "/session/new",
-    label: "Manual",
-    icon: "edit",
-  },
-] as const;
-
+// Mobile counterpart to SideNav -- same 5 destinations (New Session routes
+// through /session/start's import-vs-manual picker rather than straight to
+// the manual form), laid out as one flat justify-between row so every item
+// gets the same gap and the row's own edge padding is symmetric left/right.
 export function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [dialOpen, setDialOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Tapping anywhere outside the dial closes it — there's no dark backdrop
-  // to catch the click for us like the old bottom sheet had.
-  useEffect(() => {
-    if (!dialOpen) return;
-    function onPointerDown(e: PointerEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) setDialOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [dialOpen]);
-
-  function goTo(href: string) {
-    setDialOpen(false);
-    router.push(href);
-  }
 
   return (
     <nav className="glass-strong fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 items-center justify-between px-6 pb-3 pt-4 md:hidden">
-      <div className="flex items-center gap-5">
-        {SIDE_ITEMS.slice(0, 2).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-              pathname === item.href ? "text-lime" : "text-ink-muted"
-            }`}
-          >
-            <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Positioned against `nav` itself (already a containing block, since
-          it's `fixed`) rather than sharing the flex row with the side
-          links — the two flanking groups aren't the same width, so
-          justify-around/between would otherwise pull this off the true
-          center. */}
-      <div ref={wrapperRef} className="absolute bottom-11 left-1/2 -translate-x-1/2">
-        <div
-          className={`absolute bottom-full left-1/2 mb-4 flex -translate-x-1/2 gap-8 transition-all duration-200 ${
-            dialOpen
-              ? "translate-y-0 opacity-100"
-              : "pointer-events-none translate-y-2 opacity-0"
+      {ITEMS.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
+            pathname === item.href ? "text-lime" : "text-ink-muted"
           }`}
         >
-          {DIAL_OPTIONS.map((opt) => (
-            <button
-              key={opt.href}
-              onClick={() => goTo(opt.href)}
-              className="flex flex-col items-center gap-1.5"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-lime text-on-lime shadow-lg transition-transform active:scale-90">
-                <span className="material-symbols-outlined text-xl">{opt.icon}</span>
-              </span>
-              <span className="text-[10px] font-bold text-ink">{opt.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => setDialOpen((v) => !v)}
-          aria-label={dialOpen ? "Close" : "New session"}
-          aria-expanded={dialOpen}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-lime text-on-lime shadow-lg transition-transform active:scale-95"
-        >
-          <span
-            className="material-symbols-outlined text-3xl transition-transform duration-200"
-            style={{ transform: dialOpen ? "rotate(45deg)" : "rotate(0deg)" }}
-          >
-            add
-          </span>
-        </button>
-      </div>
-
-      <div className="flex items-center gap-5">
-        {SIDE_ITEMS.slice(2).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-              pathname === item.href ? "text-lime" : "text-ink-muted"
-            }`}
-          >
-            <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </div>
+          <span className="material-symbols-outlined text-2xl">{item.icon}</span>
+          {item.label}
+        </Link>
+      ))}
     </nav>
   );
 }

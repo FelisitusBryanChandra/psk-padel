@@ -54,6 +54,8 @@ function HomeSkeleton() {
           </div>
         ))}
       </div>
+      <SideNav />
+      <BottomNav />
     </main>
   );
 }

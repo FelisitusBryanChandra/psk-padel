@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/session/new", label: "New session", icon: "add_circle" },
+  { href: "/session/start", label: "New session", icon: "add_circle" },
   { href: "/history", label: "History", icon: "history" },
   { href: "/profile", label: "Profile", icon: "person" },
   { href: "/settings", label: "Settings", icon: "settings" },
