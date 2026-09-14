@@ -78,6 +78,86 @@
   --color-flame-line: rgba(196, 92, 10, 0.55);
 }
 
+/* Accent color themes: swap the brand tokens (--color-lime/-dim/-on-lime,
+   used everywhere via bg-lime/text-lime/text-on-lime) and the ambient glow
+   tokens WaveBackground reads, without touching structural tokens (surface/
+   ink/outline) or the unrelated semantic --color-live ("this match is
+   live"). "mint" is the original palette baked into @theme/.light above, so
+   it needs no override block here -- ThemeSettings just never sets
+   data-accent for it. Each other accent gets one dark block and one
+   .light-scoped block, keyed off the same data-accent attribute so accent
+   and light/dark combine freely (e.g. .light[data-accent="ocean"]).
+   Extending the palette registry (src/lib/theme.ts) with a new "id" here is
+   required, not just adding CSS on its own — the JS side has no color
+   values, only the swatch dot's own inline color. */
+[data-accent="ocean"] {
+  --color-lime: #4fb4ff;
+  --color-lime-dim: #8fd0ff;
+  --color-on-lime: #04202f;
+  --color-glow-a: rgba(0, 120, 220, 0.24);
+  --color-glow-b: rgba(80, 180, 255, 0.14);
+  --color-glow-c: rgba(120, 80, 255, 0.13);
+}
+.light[data-accent="ocean"] {
+  --color-lime: #0077c2;
+  --color-lime-dim: #004a78;
+  --color-on-lime: #f2fbff;
+  --color-glow-a: rgba(0, 110, 200, 0.3);
+  --color-glow-b: rgba(60, 150, 220, 0.2);
+  --color-glow-c: rgba(90, 90, 220, 0.18);
+}
+
+[data-accent="violet"] {
+  --color-lime: #b58cff;
+  --color-lime-dim: #d6bfff;
+  --color-on-lime: #1c0a33;
+  --color-glow-a: rgba(140, 60, 220, 0.24);
+  --color-glow-b: rgba(190, 120, 255, 0.14);
+  --color-glow-c: rgba(255, 80, 180, 0.13);
+}
+.light[data-accent="violet"] {
+  --color-lime: #7c3fe0;
+  --color-lime-dim: #4a1f8f;
+  --color-on-lime: #fbf5ff;
+  --color-glow-a: rgba(110, 40, 190, 0.3);
+  --color-glow-b: rgba(150, 90, 220, 0.2);
+  --color-glow-c: rgba(210, 60, 150, 0.18);
+}
+
+[data-accent="amber"] {
+  --color-lime: #ffb347;
+  --color-lime-dim: #ffd08a;
+  --color-on-lime: #2b1600;
+  --color-glow-a: rgba(220, 140, 0, 0.24);
+  --color-glow-b: rgba(255, 190, 60, 0.14);
+  --color-glow-c: rgba(255, 90, 20, 0.13);
+}
+.light[data-accent="amber"] {
+  --color-lime: #b9720a;
+  --color-lime-dim: #7a4b00;
+  --color-on-lime: #fff8ec;
+  --color-glow-a: rgba(190, 120, 0, 0.3);
+  --color-glow-b: rgba(220, 160, 40, 0.2);
+  --color-glow-c: rgba(220, 90, 20, 0.18);
+}
+
+[data-accent="rose"] {
+  --color-lime: #ff6fa5;
+  --color-lime-dim: #ffa8c6;
+  --color-on-lime: #2b0716;
+  --color-glow-a: rgba(220, 0, 90, 0.24);
+  --color-glow-b: rgba(255, 120, 170, 0.14);
+  --color-glow-c: rgba(255, 60, 60, 0.13);
+}
+.light[data-accent="rose"] {
+  --color-lime: #c81760;
+  --color-lime-dim: #8a0e40;
+  --color-on-lime: #fff0f5;
+  --color-glow-a: rgba(190, 0, 80, 0.3);
+  --color-glow-b: rgba(220, 90, 140, 0.2);
+  --color-glow-c: rgba(210, 60, 60, 0.18);
+}
+
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }

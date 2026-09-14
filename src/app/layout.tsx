@@ -45,7 +45,7 @@ export default function RootLayout({
           id="theme-no-flash"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}}catch(e){}`,
+            __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}var a=localStorage.getItem('psk_accent_theme');if(a&&a!=='mint'){document.documentElement.setAttribute('data-accent',a)}}catch(e){}`,
           }}
         />
         <WaveBackground />
