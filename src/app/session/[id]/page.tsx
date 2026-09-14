@@ -89,6 +89,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [confirmingRebalance, setConfirmingRebalance] = useState(false);
   const [starting, setStarting] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [matchesLinkCopied, setMatchesLinkCopied] = useState(false);
   const [swappingId, setSwappingId] = useState<string | null>(null);
   const [swapName, setSwapName] = useState("");
   const [editingCourts, setEditingCourts] = useState(false);
@@ -184,6 +185,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     await navigator.clipboard.writeText(url);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 1500);
+  }
+
+  async function copyMatchesLink() {
+    const url = `${window.location.origin}/session/${id}/view`;
+    await navigator.clipboard.writeText(url);
+    setMatchesLinkCopied(true);
+    setTimeout(() => setMatchesLinkCopied(false), 1500);
   }
 
   function tapForTeam(playerId: string) {
@@ -538,6 +546,15 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               <span className="material-symbols-outlined text-sm">tv</span>
               TV Board
             </Link>
+            <button
+              onClick={copyMatchesLink}
+              className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {matchesLinkCopied ? "check" : "link"}
+              </span>
+              {matchesLinkCopied ? "Copied!" : "Share"}
+            </button>
           </div>
         </div>
       </header>
