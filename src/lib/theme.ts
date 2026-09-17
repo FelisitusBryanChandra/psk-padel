@@ -1,14 +1,15 @@
 // Accent color themes -- see the matching [data-accent="..."] blocks in
 // globals.css for the actual color values. This registry only carries the
-// swatch dot's own display color plus the id/label; it never sets CSS
-// values itself, so a new accent needs a globals.css block AND an entry
-// here, not one or the other.
+// swatch dot's own display colors (one per light/dark, since --color-lime
+// itself flips between them) plus the id/label; it never sets CSS values
+// itself, so a new accent needs a globals.css block AND an entry here, not
+// one or the other.
 export const ACCENT_THEMES = [
-  { id: "mint", label: "Mint", swatch: "#2ff0bf" },
-  { id: "ocean", label: "Ocean", swatch: "#4fb4ff" },
-  { id: "violet", label: "Violet", swatch: "#b58cff" },
-  { id: "amber", label: "Amber", swatch: "#ffb347" },
-  { id: "rose", label: "Rose", swatch: "#ff6fa5" },
+  { id: "mint", label: "Mint", swatchDark: "#2ff0bf", swatchLight: "#22c9a2" },
+  { id: "ocean", label: "Ocean", swatchDark: "#4fb4ff", swatchLight: "#0077c2" },
+  { id: "violet", label: "Violet", swatchDark: "#b58cff", swatchLight: "#7c3fe0" },
+  { id: "amber", label: "Amber", swatchDark: "#ffb347", swatchLight: "#b9720a" },
+  { id: "rose", label: "Rose", swatchDark: "#ff6fa5", swatchLight: "#c81760" },
 ] as const;
 
 export type AccentTheme = (typeof ACCENT_THEMES)[number]["id"];
@@ -49,11 +50,14 @@ export function applyAccentTheme(theme: AccentTheme) {
 // Base color themes -- the structural neutrals (bg/surface tiers, ink,
 // outline, neu-shadows), a separate axis from the accent above: see the
 // matching [data-base="..."] blocks in globals.css. Same registry/CSS
-// pairing rule as ACCENT_THEMES.
+// pairing rule as ACCENT_THEMES. swatchDark/swatchLight are each theme's
+// own --color-bg in that mode -- these are near-black in dark mode and
+// pale in light mode, so unlike accents the two are never close enough to
+// substitute for each other.
 export const BASE_THEMES = [
-  { id: "petrol", label: "Petrol", swatch: "#06222b" },
-  { id: "slate", label: "Slate", swatch: "#14181d" },
-  { id: "charcoal", label: "Charcoal", swatch: "#1a1614" },
+  { id: "petrol", label: "Petrol", swatchDark: "#06222b", swatchLight: "#cfe3e4" },
+  { id: "slate", label: "Slate", swatchDark: "#14181d", swatchLight: "#e3e6ea" },
+  { id: "charcoal", label: "Charcoal", swatchDark: "#1a1614", swatchLight: "#ece3d8" },
 ] as const;
 
 export type BaseTheme = (typeof BASE_THEMES)[number]["id"];

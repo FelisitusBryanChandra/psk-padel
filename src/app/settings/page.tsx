@@ -48,6 +48,7 @@ export default function SettingsPage() {
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState<AccentTheme>("mint");
   const [base, setBase] = useState<BaseTheme>("petrol");
+  const [light, setLight] = useState(false);
 
   useEffect(() => {
     try {
@@ -59,6 +60,21 @@ export default function SettingsPage() {
     setAccent(readAccentTheme());
     setBase(readBaseTheme());
     setLoaded(true);
+  }, []);
+
+  // Swatch dots need to show each theme's light-mode color while ThemeToggle
+  // has the app in light mode (otherwise every Base color option keeps
+  // showing its near-black dark-mode color, which reads as "these all look
+  // the same" once the page itself is light). ThemeToggle flips the class
+  // directly with no callback, so watch for it instead of threading state
+  // through a prop.
+  useEffect(() => {
+    setLight(document.documentElement.classList.contains("light"));
+    const observer = new MutationObserver(() => {
+      setLight(document.documentElement.classList.contains("light"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -115,7 +131,7 @@ export default function SettingsPage() {
                   className={`h-7 w-7 rounded-full transition-transform active:scale-90 ${
                     base === t.id ? "ring-2 ring-offset-2 ring-offset-surface ring-ink" : ""
                   }`}
-                  style={{ background: t.swatch }}
+                  style={{ background: light ? t.swatchLight : t.swatchDark }}
                 />
               ))}
             </div>
@@ -136,7 +152,7 @@ export default function SettingsPage() {
                   className={`h-7 w-7 rounded-full transition-transform active:scale-90 ${
                     accent === t.id ? "ring-2 ring-offset-2 ring-offset-surface ring-ink" : ""
                   }`}
-                  style={{ background: t.swatch }}
+                  style={{ background: light ? t.swatchLight : t.swatchDark }}
                 />
               ))}
             </div>
