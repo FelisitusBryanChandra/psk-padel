@@ -5,18 +5,20 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/session/start", label: "New", icon: "add_circle" },
   { href: "/history", label: "History", icon: "history" },
-  { href: "/profile", label: "Profile", icon: "person" },
+  { href: "/session/start", label: "New", icon: "add_circle" },
   { href: "/settings", label: "Settings", icon: "settings" },
+  { href: "/profile", label: "Profile", icon: "person" },
 ] as const;
 
 // Mobile counterpart to SideNav -- same 5 destinations (New Session routes
 // through /session/start's import-vs-manual picker rather than straight to
-// the manual form), laid out as one flat justify-between row so every item
-// gets the same gap and the row's own edge padding is symmetric left/right.
-// Floats as a fully-rounded pill inset from the screen edges (iOS-style
-// quick-action bar) rather than a flush, edge-to-edge bar.
+// the manual form), reordered so New sits dead center of the row rather
+// than matching SideNav's order. Laid out as one flat justify-between row
+// so every item gets the same gap and the row's own edge padding is
+// symmetric left/right. Floats as a fully-rounded pill inset from the
+// screen edges (iOS-style quick-action bar) rather than a flush,
+// edge-to-edge bar.
 export function BottomNav() {
   const pathname = usePathname();
 
