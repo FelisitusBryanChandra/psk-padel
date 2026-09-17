@@ -530,30 +530,37 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               Standings
             </button>
           </div>
-          <div className="flex items-center gap-3">
+          {/* Icon-only (no text labels) so all three fit back on the tabs'
+              own row instead of needing a second row -- that stacked layout
+              fixed Share getting pushed off-screen on phones, but reads as
+              cluttered with three full labels crammed to one side. */}
+          <div className="flex items-center gap-1">
             <Link
               href={`/session/${id}/register`}
-              className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
+              aria-label="Players"
+              title="Players"
+              className="flex h-8 w-8 items-center justify-center text-lime-dim"
             >
-              <span className="material-symbols-outlined text-sm">group</span>
-              Players
+              <span className="material-symbols-outlined text-xl">group</span>
             </Link>
             <Link
               href={`/session/${id}/board`}
               target="_blank"
-              className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
+              aria-label="TV Board"
+              title="TV Board"
+              className="flex h-8 w-8 items-center justify-center text-lime-dim"
             >
-              <span className="material-symbols-outlined text-sm">tv</span>
-              TV Board
+              <span className="material-symbols-outlined text-xl">tv</span>
             </Link>
             <button
               onClick={copyMatchesLink}
-              className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-lime-dim"
+              aria-label={matchesLinkCopied ? "Copied" : "Share"}
+              title={matchesLinkCopied ? "Copied" : "Share"}
+              className="flex h-8 w-8 items-center justify-center text-lime-dim"
             >
-              <span className="material-symbols-outlined text-sm">
+              <span className="material-symbols-outlined text-xl">
                 {matchesLinkCopied ? "check" : "link"}
               </span>
-              {matchesLinkCopied ? "Copied!" : "Share"}
             </button>
           </div>
         </div>

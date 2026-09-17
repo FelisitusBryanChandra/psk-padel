@@ -15,11 +15,13 @@ const ITEMS = [
 // through /session/start's import-vs-manual picker rather than straight to
 // the manual form), laid out as one flat justify-between row so every item
 // gets the same gap and the row's own edge padding is symmetric left/right.
+// Floats as a fully-rounded pill inset from the screen edges (iOS-style
+// quick-action bar) rather than a flush, edge-to-edge bar.
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="glass-strong fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 items-center justify-between px-6 pb-3 pt-4 md:hidden">
+    <nav className="glass-strong fixed bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-full px-6 py-3 shadow-lg md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}
