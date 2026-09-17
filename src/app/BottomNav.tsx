@@ -23,7 +23,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="glass-strong fixed bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-full px-6 py-3 shadow-lg md:hidden">
+    <nav className="glass-strong nav-pill fixed bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-full px-7 py-4 md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}
