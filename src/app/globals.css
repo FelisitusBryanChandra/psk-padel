@@ -263,19 +263,25 @@
     inset 0 1px 0 var(--shadow-neu-light);
 }
 
-/* Pair with `glass-strong` on BottomNav's floating pill for a more
-   pronounced "liquid glass" bevel -- glass-strong's own sheen is a bare 1px
-   edge; this layers in a soft glossy band across the top third instead,
-   like light catching a rounded glass surface. Redeclares (rather than
-   supplements) glass-strong's own box-shadow, since box-shadow doesn't
-   merge across rules -- keep this in sync with glass-strong's dark-shadow
-   layers if that recipe ever changes. */
+/* Pair with `glass-strong` on BottomNav's floating pill for an actual
+   "liquid glass" read instead of a plain frosted panel: lets more of
+   whatever's behind it show through (lower background opacity, heavier
+   blur/saturate/brightness so that color reads vivid rather than muddy),
+   plus a brighter edge ring and a stronger top-band highlight than
+   glass-strong's bare 1px sheen. Redeclares (rather than supplements)
+   glass-strong's background/backdrop-filter/border/box-shadow, since none
+   of those merge across rules -- this must restate glass-strong's own
+   dark-shadow layers, not just add to them. Pairs with the specular
+   gradient overlay rendered as the pill's first child in BottomNav. */
 .nav-pill {
+  background: color-mix(in srgb, var(--color-surface) 50%, transparent);
+  backdrop-filter: blur(32px) saturate(2.2) brightness(1.15);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
   box-shadow:
     0 4px 10px -2px var(--shadow-neu-dark),
     0 24px 56px -12px var(--shadow-neu-dark),
     inset 0 1px 0 var(--shadow-neu-light),
-    inset 0 16px 20px -14px var(--shadow-neu-light);
+    inset 0 20px 24px -14px var(--shadow-neu-light);
 }
 
 /* Neumorphism: soft dual-shadow relief for small tactile controls sitting

@@ -24,6 +24,17 @@ export function BottomNav() {
 
   return (
     <nav className="glass-strong nav-pill fixed bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-full px-7 py-4 md:hidden">
+      {/* Specular highlight: a real gradient rather than another shadow
+          layer, so the top of the pill reads as glass catching light
+          instead of just a soft glow. Negative z-index (not 0) so it
+          paints behind the plain in-flow Links below -- a non-negative
+          z-index on an absolutely positioned element paints *above*
+          static in-flow content regardless of DOM order. Never intercepts
+          taps either way (pointer-events-none). */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-b from-white/30 via-white/5 to-transparent"
+      />
       {ITEMS.map((item) => (
         <Link
           key={item.href}
