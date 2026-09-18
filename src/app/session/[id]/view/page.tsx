@@ -2,8 +2,9 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import { Logo } from "@/app/Logo";
+import { StandingsTable } from "@/app/StandingsTable";
 import { computeMatchTitle } from "@/lib/matchTitle";
-import { courtLabel, type PlayerRef } from "@/lib/types";
+import { courtLabel, type PlayerRef, type StandingRow } from "@/lib/types";
 
 type ViewMatch = {
   id: string;
@@ -51,15 +52,21 @@ export default function PublicMatchesViewPage({
 }) {
   const { id } = use(params);
   const [session, setSession] = useState<ViewSession | null>(null);
+  const [standings, setStandings] = useState<StandingRow[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const [tab, setTab] = useState<"matches" | "standings">("matches");
 
   const refresh = useCallback(async () => {
-    const res = await fetch(`/api/public/sessions/${id}/matches`);
-    if (res.status === 404) {
+    const [sRes, stRes] = await Promise.all([
+      fetch(`/api/public/sessions/${id}/matches`),
+      fetch(`/api/public/sessions/${id}/standings`),
+    ]);
+    if (sRes.status === 404) {
       setNotFound(true);
       return;
     }
-    if (res.ok) setSession(await res.json());
+    if (sRes.ok) setSession(await sRes.json());
+    if (stRes.ok) setStandings(await stRes.json());
   }, [id]);
 
   useEffect(() => {
@@ -90,7 +97,33 @@ export default function PublicMatchesViewPage({
         {session.venueName && <p className="text-xs text-ink-muted">{session.venueName}</p>}
       </div>
 
-      {session.rounds.map((round) => (
+      <div className="flex justify-center gap-4 border-b border-outline/30 pb-2">
+        <button
+          onClick={() => setTab("matches")}
+          className={`text-xs font-black uppercase tracking-widest pb-2 px-1 border-b-2 ${
+            tab === "matches" ? "border-lime text-lime" : "border-transparent text-ink-muted"
+          }`}
+        >
+          Matches
+        </button>
+        <button
+          onClick={() => setTab("standings")}
+          className={`text-xs font-black uppercase tracking-widest pb-2 px-1 border-b-2 ${
+            tab === "standings" ? "border-lime text-lime" : "border-transparent text-ink-muted"
+          }`}
+        >
+          Standings
+        </button>
+      </div>
+
+      {tab === "standings" && (
+        <StandingsTable
+          rows={standings}
+          scoreLabel={session.scoringMode === "SET" ? "Games" : "Score"}
+        />
+      )}
+
+      {tab === "matches" && session.rounds.map((round) => (
         <section key={round.id} className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <h2 className="font-heading text-lg font-bold text-ink">Round {round.roundNumber}</h2>
