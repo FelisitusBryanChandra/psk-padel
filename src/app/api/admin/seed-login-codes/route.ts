@@ -10,6 +10,7 @@ const NAMED_CODES: Record<string, { passcode: string; community?: string }> = {
   Daniel: { passcode: "Daniel123", community: "KANTO" },
   Rizki: { passcode: "Rizki123", community: "RizkiPadel" },
   Paldi: { passcode: "wahh1998", community: "PaldiPadel" },
+  BIPODEL: { passcode: "BIPODEL2026!", community: "BIPODEL" },
 };
 
 export async function POST(req: NextRequest) {
