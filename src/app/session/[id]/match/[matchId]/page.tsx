@@ -111,6 +111,18 @@ export default function ScoreboardPage({
     return true;
   }
 
+  // Points mode minus, same as master's − stepper: takes one point off that
+  // team (never below 0) and re-derives serve rotation from the new total.
+  function removePoint(team: 1 | 2) {
+    const prevTotal = live.team1Score + live.team2Score;
+    const team1Score = team === 1 ? Math.max(0, live.team1Score - 1) : live.team1Score;
+    const team2Score = team === 2 ? Math.max(0, live.team2Score - 1) : live.team2Score;
+    if (team1Score === live.team1Score && team2Score === live.team2Score) return;
+    const serve = nextServeState(live, prevTotal, team1Score + team2Score, session?.pointsPerServe ?? 5);
+    setPointHistory((h) => [...h, live]);
+    setLive({ ...live, ...serve, team1Score, team2Score });
+  }
+
   // Set mode: awards one tennis point. Returns false when blocked.
   function scorePoint(team: 1 | 2): boolean {
     if (!match || !session) return false;
@@ -339,6 +351,7 @@ export default function ScoreboardPage({
             pointText={t.pointText}
             onScore={() => (setMode ? scorePoint(t.team) : addPoint(t.team))}
             onUndo={undoPoint}
+            onMinus={setMode ? undefined : () => removePoint(t.team)}
             onServe={() => setLive((prev) => ({ ...prev, ...cycleServe(prev) }))}
           />
         ))}
@@ -393,8 +406,10 @@ function TeamHalf({
   pointText,
   onScore,
   onUndo,
+  onMinus,
   onServe,
 }: {
+  onMinus?: () => void;
   names: readonly [string, string];
   serverName: string | null;
   leading: boolean;
@@ -543,6 +558,19 @@ function TeamHalf({
           <RollingNumber value={score} className="font-heading text-[60cqh] font-black" />
         )}
       </div>
+
+      {onMinus && (
+        <button
+          data-no-score
+          onClick={onMinus}
+          aria-label="Remove a point"
+          className={`pressable absolute bottom-3 left-3 z-10 flex h-11 w-11 items-center justify-center rounded-xl ${
+            leading ? "bg-on-lime/10" : "bg-surface-highest"
+          }`}
+        >
+          <span className="material-symbols-outlined text-2xl">remove</span>
+        </button>
+      )}
 
       <AnimatePresence>
         {bursts.map((b) => (

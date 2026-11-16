@@ -1194,12 +1194,20 @@ function MatchCard({
                 className="w-20 rounded-xl border border-lime bg-surface-low px-2 py-1 text-center font-heading text-4xl font-black tabular-nums text-ink"
               />
             ) : (
-              <RollingNumber
-                value={row.score}
-                className={`font-heading text-6xl font-black transition-colors duration-500 ${
-                  row.ahead ? "text-lime" : "text-ink"
-                }`}
-              />
+              <button
+                type="button"
+                onClick={() => !m.completed && onStartEdit()}
+                disabled={m.completed}
+                aria-label="Edit score"
+                className="pressable select-none rounded-xl px-1 disabled:active:scale-100"
+              >
+                <RollingNumber
+                  value={row.score}
+                  className={`font-heading text-6xl font-black transition-colors duration-500 ${
+                    row.ahead ? "text-lime" : "text-ink"
+                  }`}
+                />
+              </button>
             )}
           </div>
         ))}
