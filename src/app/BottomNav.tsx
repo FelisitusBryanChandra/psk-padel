@@ -15,8 +15,10 @@ const RIGHT = [
   { href: "/profile", label: "Profile", icon: "person" },
 ] as const;
 
-const NOTCH_W = 124;
-const BAR_H = 66;
+const BAR_H = 60;
+const NOTCH_W = 96;
+const BALL = 52;
+const RADIUS = 24;
 
 type LiveCourt = {
   sessionId: string;
@@ -31,33 +33,38 @@ function Tab({ href, label, icon, active }: { href: string; label: string; icon:
   return (
     <Link
       href={href}
-      className={`pressable relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors duration-300 ${
+      aria-label={label}
+      className={`pressable relative flex h-full flex-1 flex-col items-center justify-center transition-colors duration-300 ${
         active ? "text-lime" : "text-ink-muted"
       }`}
     >
       <motion.span
-        className="material-symbols-outlined text-[26px]"
+        className="material-symbols-outlined text-[25px] leading-none"
         style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
         initial={false}
-        animate={{ y: active ? -2 : 0 }}
-        transition={{ type: "spring", stiffness: 500, damping: 24 }}
+        animate={{ y: active ? -5 : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 26 }}
       >
         {icon}
       </motion.span>
-      {label}
-      {active && (
-        <motion.span
-          className="absolute bottom-1.5 h-[3px] w-5 rounded-full bg-lime"
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 520, damping: 22, delay: 0.05 }}
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {active && (
+          <motion.span
+            className="absolute bottom-[9px] text-[10px] font-semibold uppercase tracking-wider"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </Link>
   );
 }
 
-// The New button: a padel ball resting in the bar's notch. Spins a full
+// The New button: a padel ball sunk into the dock's notch. Spins a full
 // turn on tap, then navigates once the spin has visibly started.
 function Ball() {
   const router = useRouter();
@@ -71,17 +78,17 @@ function Ball() {
         navigator.vibrate?.(10);
         setTimeout(() => router.push("/session/start"), 220);
       }}
-      className="absolute left-1/2 z-10 -ml-[31px] flex h-[62px] w-[62px] items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_12px_30px_-8px_var(--color-lime)]"
-      style={{ top: -30 }}
+      className="absolute left-1/2 z-10 flex items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_6px_18px_-6px_var(--color-lime)]"
+      style={{ width: BALL, height: BALL, marginLeft: -BALL / 2, top: -BALL / 2 }}
       animate={{ rotate: turns * 360 }}
-      whileTap={{ scale: 0.88 }}
-      transition={{ type: "spring", stiffness: 120, damping: 14 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 140, damping: 15 }}
     >
-      <svg aria-hidden="true" viewBox="0 0 62 62" className="absolute inset-0 h-full w-full" fill="none">
-        <path d="M9 14 C 24 24, 24 38, 9 48" stroke="currentColor" strokeOpacity="0.28" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M53 14 C 38 24, 38 38, 53 48" stroke="currentColor" strokeOpacity="0.28" strokeWidth="2.5" strokeLinecap="round" />
+      <svg aria-hidden="true" viewBox="0 0 52 52" className="absolute inset-0 h-full w-full" fill="none">
+        <path d="M8 13 C 19 21, 19 31, 8 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+        <path d="M44 13 C 33 21, 33 31, 44 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+        <path d="M26 17 V35 M17 26 H35" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
       </svg>
-      <span className="material-symbols-outlined relative text-[30px] font-bold">add</span>
     </motion.button>
   );
 }
@@ -104,15 +111,15 @@ function LiveIsland({ courts }: { courts: LiveCourt[] }) {
         <motion.div
           key="island"
           className="pointer-events-auto absolute left-1/2 z-20"
-          style={{ bottom: BAR_H + 44, x: "-50%" }}
-          initial={{ opacity: 0, y: 24, scale: 0.6 }}
+          style={{ bottom: BAR_H + BALL / 2 + 14, x: "-50%" }}
+          initial={{ opacity: 0, y: 20, scale: 0.6 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 24, scale: 0.6 }}
+          exit={{ opacity: 0, y: 20, scale: 0.6 }}
           transition={{ type: "spring", stiffness: 420, damping: 26 }}
         >
           <Link
             href={`/session/${c.sessionId}/match/${c.matchId}`}
-            className="pressable flex items-center gap-2.5 whitespace-nowrap rounded-full bg-lime py-1.5 pl-3.5 pr-2 text-on-lime shadow-[0_10px_30px_-10px_var(--color-lime)] ring-4 ring-bg"
+            className="pressable flex items-center gap-2.5 whitespace-nowrap rounded-full bg-lime py-1.5 pl-3.5 pr-2 text-on-lime ring-4 ring-bg"
           >
             <span className="live-dot text-live" />
             <AnimatePresence mode="popLayout" initial={false}>
@@ -142,9 +149,9 @@ function LiveIsland({ courts }: { courts: LiveCourt[] }) {
   );
 }
 
-// Mobile nav: an edge-to-edge dock with a notch cut into its top edge,
-// a padel-ball New button resting in it, and a live-score island above
-// whenever a court is in play. SideNav covers desktop.
+// Mobile nav: a floating dock with a notch in its top edge, a padel-ball
+// New button sunk into it, and a live-score island above whenever a court
+// is in play. SideNav covers desktop.
 export function BottomNav() {
   const pathname = usePathname();
   const [courts, setCourts] = useState<LiveCourt[]>([]);
@@ -167,44 +174,50 @@ export function BottomNav() {
     };
   }, []);
 
+  const notchPath = `M0 0 H10 C22 0 21 ${BALL / 2 + 4} ${NOTCH_W / 2} ${BALL / 2 + 4} C${NOTCH_W - 21} ${
+    BALL / 2 + 4
+  } ${NOTCH_W - 22} 0 ${NOTCH_W - 10} 0 H${NOTCH_W}`;
+
   return (
     <>
       {/* Keeps the last content clear of the island when it's showing. */}
       {courts.length > 0 && <div aria-hidden="true" className="h-14 shrink-0 md:hidden" />}
-      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-30 md:hidden">
+      <nav
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 md:hidden"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
         <div className="relative mx-auto max-w-md">
           <LiveIsland courts={courts} />
-          <div className="pointer-events-auto relative">
+          <div className="pointer-events-auto relative" style={{ height: BAR_H }}>
             <div
               aria-hidden="true"
-              className="absolute inset-x-0 top-0 flex text-surface-high"
-              style={{ height: BAR_H, filter: "drop-shadow(0 -10px 24px rgba(0,0,0,0.35))" }}
+              className="absolute inset-0 flex text-surface-high"
+              style={{ filter: "drop-shadow(0 10px 24px rgba(0,0,0,0.45))" }}
             >
-              <div className="flex-1 border-t border-outline bg-surface-high" />
+              <div
+                className="flex-1 border-y border-l border-outline bg-surface-high"
+                style={{ borderTopLeftRadius: RADIUS, borderBottomLeftRadius: RADIUS }}
+              />
               <svg width={NOTCH_W} height={BAR_H} viewBox={`0 0 ${NOTCH_W} ${BAR_H}`} className="block shrink-0">
-                <path
-                  d={`M0 0 H20 C36 0 34 38 62 38 C90 38 88 0 104 0 H${NOTCH_W} V${BAR_H} H0 Z`}
-                  fill="currentColor"
-                />
-                <path
-                  d={`M0 0.5 H20 C36 0.5 34 38.5 62 38.5 C90 38.5 88 0.5 104 0.5 H${NOTCH_W}`}
-                  stroke="var(--color-outline)"
-                  fill="none"
-                />
+                <path d={`${notchPath} V${BAR_H} H0 Z`} fill="currentColor" />
+                <path d={notchPath.replace(/ 0 /g, " 0.5 ")} stroke="var(--color-outline)" fill="none" />
+                <path d={`M0 ${BAR_H - 0.5} H${NOTCH_W}`} stroke="var(--color-outline)" />
               </svg>
-              <div className="flex-1 border-t border-outline bg-surface-high" />
+              <div
+                className="flex-1 border-y border-r border-outline bg-surface-high"
+                style={{ borderTopRightRadius: RADIUS, borderBottomRightRadius: RADIUS }}
+              />
             </div>
-            <div className="relative flex" style={{ height: BAR_H }}>
+            <div className="relative flex h-full px-2">
               {LEFT.map((t) => (
                 <Tab key={t.href} {...t} active={pathname === t.href} />
               ))}
-              <div className="shrink-0" style={{ width: NOTCH_W - 20 }} />
+              <div className="shrink-0" style={{ width: NOTCH_W }} />
               {RIGHT.map((t) => (
                 <Tab key={t.href} {...t} active={pathname === t.href} />
               ))}
             </div>
             <Ball />
-            <div className="bg-surface-high" style={{ height: "env(safe-area-inset-bottom)" }} />
           </div>
         </div>
       </nav>
