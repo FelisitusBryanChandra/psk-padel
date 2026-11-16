@@ -130,6 +130,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     null
   );
 
+  // Keep the selected round chip in view when the round changes.
+  const selectedChipRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    selectedChipRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [pickedRound, session?.rounds.length]);
+
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     fetch("/api/me")
@@ -384,6 +390,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const sittingOut = rosterPlayers.filter((p) => !playingIds.has(p.id));
   const roundsDone = session.rounds.filter((r) => r.matches.every((m) => m.completed)).length;
 
+  function goToRound(r: RoundDto) {
+    setPickedRound(r === currentRound ? null : r.roundNumber);
+    setReturnToMatchId(null);
+    setTab("courts");
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col pb-28 md:max-w-xl lg:max-w-2xl">
       <header className="glass-header sticky top-0 z-20 px-5 pb-3 pt-4">
@@ -477,53 +489,73 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
         {started && (
           <div className="mt-4">
-            <div className="mb-2 flex items-baseline justify-between">
-              <span className="font-heading text-xl font-extrabold uppercase text-ink">
-                Round {shownRound?.roundNumber}
-                <span className="text-ink-muted"> / {session.rounds.length}</span>
-              </span>
-              <span className="text-xs text-ink-muted">
-                {roundsDone} of {session.rounds.length} done
-                {pickedRound !== null && !isCurrent && (
-                  <button
-                    onClick={() => setPickedRound(null)}
-                    className="ml-2 font-semibold text-lime"
-                  >
-                    Back to live
-                  </button>
-                )}
-              </span>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <button
+                onClick={() => shownIdx > 0 && goToRound(session.rounds[shownIdx - 1])}
+                disabled={shownIdx <= 0}
+                aria-label="Previous round"
+                className="pressable flex h-9 w-9 items-center justify-center rounded-xl bg-surface-high text-ink disabled:opacity-30"
+              >
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <div className="flex flex-1 flex-col items-center">
+                <span className="font-heading text-xl font-extrabold uppercase leading-none text-ink">
+                  Round {shownRound?.roundNumber}
+                  <span className="text-ink-muted"> / {session.rounds.length}</span>
+                </span>
+                <span className="mt-1 text-[11px] text-ink-muted">
+                  {roundsDone} of {session.rounds.length} done
+                  {pickedRound !== null && !isCurrent && (
+                    <button
+                      onClick={() => setPickedRound(null)}
+                      className="ml-2 font-semibold text-lime"
+                    >
+                      Back to live
+                    </button>
+                  )}
+                </span>
+              </div>
+              <button
+                onClick={() =>
+                  shownIdx < session.rounds.length - 1 && goToRound(session.rounds[shownIdx + 1])
+                }
+                disabled={shownIdx >= session.rounds.length - 1}
+                aria-label="Next round"
+                className="pressable flex h-9 w-9 items-center justify-center rounded-xl bg-surface-high text-ink disabled:opacity-30"
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
             </div>
-            <div className="flex gap-1">
+            <div className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 py-1">
               {session.rounds.map((r) => {
                 const done = r.matches.every((m) => m.completed);
                 const doneCount = r.matches.filter((m) => m.completed).length;
                 const selected = r === shownRound;
+                const live = r === currentRound && !done;
                 return (
                   <button
                     key={r.id}
-                    onClick={() => {
-                      setPickedRound(r === currentRound ? null : r.roundNumber);
-                      setTab("courts");
-                    }}
+                    ref={selected ? selectedChipRef : undefined}
+                    onClick={() => goToRound(r)}
                     aria-label={`Round ${r.roundNumber}`}
-                    className="group relative h-6 flex-1"
+                    aria-pressed={selected}
+                    className={`pressable relative flex h-11 min-w-[3.75rem] flex-1 items-center justify-center gap-1 overflow-hidden rounded-xl border-2 font-heading text-base font-extrabold transition-colors duration-300 ${
+                      selected ? "border-lime text-ink" : "border-transparent bg-surface-high text-ink-muted"
+                    }`}
                   >
-                    <span
-                      className={`absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-surface-highest transition-all duration-300 ${
-                        selected ? "h-2.5" : "h-1.5"
-                      }`}
-                    >
-                      <motion.span
-                        className="block h-full rounded-full bg-lime"
-                        initial={false}
-                        animate={{
-                          width: done ? "100%" : `${(doneCount / r.matches.length) * 100}%`,
-                          opacity: selected || done ? 1 : 0.55,
-                        }}
-                        transition={{ duration: 0.7, ease: EASE_OUT }}
-                      />
-                    </span>
+                    <motion.span
+                      aria-hidden="true"
+                      className="absolute inset-y-0 left-0 bg-lime/20"
+                      initial={false}
+                      animate={{ width: `${(doneCount / Math.max(1, r.matches.length)) * 100}%` }}
+                      transition={{ duration: 0.7, ease: EASE_OUT }}
+                    />
+                    <span className="relative">R{r.roundNumber}</span>
+                    {done ? (
+                      <span className="material-symbols-outlined relative text-base text-lime">check</span>
+                    ) : live ? (
+                      <span className="live-dot relative text-live" />
+                    ) : null}
                   </button>
                 );
               })}

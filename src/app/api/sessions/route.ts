@@ -94,6 +94,8 @@ export async function GET(req: NextRequest) {
         roundCount: s.rounds.length,
         status,
         currentRoundNumber: currentRound?.roundNumber ?? null,
+        matchesDone: allMatches.filter((m) => m.completed).length,
+        matchesTotal: allMatches.length,
         roundProgress: s.rounds.map((r) =>
           r.matches.length ? r.matches.filter((m) => m.completed).length / r.matches.length : 0
         ),

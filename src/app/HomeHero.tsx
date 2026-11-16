@@ -29,11 +29,20 @@ export function HomeHero({
   const ongoing = sessions.filter((s) => s.status !== "COMPLETED").length;
   const finished = sessions.length - ongoing;
   const players = new Set(sessions.flatMap((s) => s.playerNames)).size;
-  const courtsInPlay = live.reduce((n, s) => n + s.liveCourts.length, 0);
+  const courtsInPlay = live.reduce(
+    (n, s) => n + s.liveCourts.filter((c) => c.team1 + c.team2 > 0).length,
+    0
+  );
 
   const [line1, line2, sub] =
     live.length > 0
-      ? ["MATCH", "DAY.", `${live.length} live · ${courtsInPlay} court${courtsInPlay === 1 ? "" : "s"} in play`]
+      ? [
+          "MATCH",
+          "DAY.",
+          courtsInPlay > 0
+            ? `${live.length} live · ${courtsInPlay} court${courtsInPlay === 1 ? "" : "s"} in play`
+            : `${live.length} session${live.length === 1 ? "" : "s"} in progress`,
+        ]
       : open.length > 0
         ? ["GAME", "ON.", `${open.length} session${open.length === 1 ? "" : "s"} open for sign-up`]
         : ["READY TO", "PLAY?", "Start a session and get the courts going."];

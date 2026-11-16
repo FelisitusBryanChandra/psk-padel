@@ -289,12 +289,17 @@ export default function NewSessionPage() {
               className={`${FIELD} h-16 font-heading text-2xl font-extrabold uppercase italic`}
             />
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="flex min-w-0 flex-col gap-2">
               <FieldLabel>Date</FieldLabel>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={FIELD} />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className={`${FIELD} min-w-0 appearance-none`}
+              />
             </label>
-            <label className="flex flex-col gap-2">
+            <label className="flex min-w-0 flex-col gap-2">
               <FieldLabel>Venue</FieldLabel>
               <input
                 value={venueName}

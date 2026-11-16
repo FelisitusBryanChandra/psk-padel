@@ -18,6 +18,8 @@ export type SessionListItem = {
   roundCount: number;
   status: "LIVE" | "COMPLETED" | null;
   currentRoundNumber: number | null;
+  matchesDone: number;
+  matchesTotal: number;
   roundProgress: number[];
   liveCourts: { courtNumber: number; label: string; team1: number; team2: number }[];
   top: { name: string; score: number; wins: number; losses: number; winStreak: number }[];
@@ -118,7 +120,9 @@ function Tags({ s, showCommunity, onAccent }: { s: SessionListItem; showCommunit
 
 function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: boolean }) {
   const d = new Date(s.date);
-  const leader = s.top[0];
+  // Only courts that have actually started; a forgotten match sitting at
+  // 0-0 says nothing, so it's left out.
+  const activeCourts = s.liveCourts.filter((c) => c.team1 + c.team2 > 0);
   const shownNames = s.playerNames.slice(0, 4);
   const extra = s.playerNames.length - shownNames.length;
 
@@ -159,13 +163,31 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
           ))}
         </div>
 
-        {s.liveCourts.length > 0 && (
+        {s.top.length > 0 && (
+          <div className="mt-3 grid grid-cols-3 gap-1.5">
+            {s.top.map((t, i) => (
+              <div key={t.name} className="min-w-0 rounded-xl bg-on-lime/10 px-2.5 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase opacity-60">
+                  <span>#{i + 1}</span>
+                  {t.winStreak >= 3 && <span>🔥{t.winStreak}</span>}
+                </div>
+                <div className="truncate text-sm font-bold leading-tight">{t.name}</div>
+                <RollingNumber value={t.score} className="font-heading text-2xl font-black" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeCourts.length > 0 && (
           <div
-            className={`mt-3 grid gap-1.5 ${s.liveCourts.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+            className={`mt-1.5 grid gap-1.5 ${activeCourts.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
           >
-            {s.liveCourts.slice(0, 4).map((c) => (
-              <div key={c.courtNumber} className="rounded-xl bg-on-lime/10 px-2.5 py-1.5">
-                <div className="truncate text-[10px] font-semibold uppercase opacity-60">{c.label}</div>
+            {activeCourts.slice(0, 4).map((c) => (
+              <div key={c.courtNumber} className="rounded-xl border-2 border-on-lime/15 px-2.5 py-1.5">
+                <div className="flex items-center gap-1.5 truncate text-[10px] font-semibold uppercase opacity-60">
+                  <span className="live-dot text-live" />
+                  {c.label}
+                </div>
                 <div className="font-heading text-3xl font-black leading-none">
                   <RollingNumber value={c.team1} />
                   <span className="opacity-40">–</span>
@@ -192,12 +214,9 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
               </span>
             )}
           </div>
-          {leader && (
-            <span className="truncate text-xs font-semibold">
-              Leader: {leader.name}
-              {leader.winStreak >= 2 && <> &middot; 🔥{leader.winStreak}</>}
-            </span>
-          )}
+          <span className="truncate text-xs font-semibold">
+            {s.matchesDone}/{s.matchesTotal} matches played
+          </span>
         </div>
       </div>
     </div>
