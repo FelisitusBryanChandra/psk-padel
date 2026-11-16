@@ -1,9 +1,6 @@
-// Static backdrop for the petrol/glass material system: three soft aurora
-// glows over a deep petrol ground, fixed to the viewport so every glass
-// panel's backdrop-filter: saturate() has color behind it to refract instead
-// of just dimming a flat ground. Glow colors are theme tokens (--color-glow-*,
-// see globals.css) so they flip with the same `.light` class ThemeToggle
-// already toggles on <html> — no separate light/dark component needed.
+// Court Night backdrop: a flat near-black ground with one faint accent glow
+// at the top and a barely-there court-line grid. The glow is the
+// --color-glow-a token, so it follows the accent and light/dark themes.
 export function WaveBackground() {
   return (
     <div
@@ -11,12 +8,14 @@ export function WaveBackground() {
       className="pointer-events-none fixed inset-0 -z-10 bg-bg"
       style={{
         backgroundImage: [
-          "radial-gradient(68% 52% at 6% -6%, var(--color-glow-a) 0%, transparent 62%)",
-          "radial-gradient(56% 44% at 98% 2%, var(--color-glow-b) 0%, transparent 64%)",
-          "radial-gradient(64% 48% at 62% 104%, var(--color-glow-c) 0%, transparent 66%)",
-          "radial-gradient(110% 80% at 50% 45%, var(--color-bg-2) 0%, transparent 72%)",
+          "radial-gradient(90% 45% at 50% -10%, var(--color-glow-a) 0%, transparent 70%)",
+          "linear-gradient(var(--color-outline) 1px, transparent 1px)",
+          "linear-gradient(90deg, var(--color-outline) 1px, transparent 1px)",
         ].join(", "),
-        backgroundAttachment: "fixed",
+        backgroundSize: "100% 100%, 100% 33.333vh, 50vw 100%",
+        backgroundPosition: "0 0, 0 0, -1px 0",
+        maskImage: "linear-gradient(to bottom, black 0%, transparent 85%)",
+        WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 85%)",
       }}
     />
   );

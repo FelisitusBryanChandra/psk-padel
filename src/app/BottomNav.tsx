@@ -2,51 +2,65 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 
 const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/history", label: "History", icon: "history" },
-  { href: "/session/start", label: "New", icon: "add_circle" },
+  { href: "/session/start", label: "New", icon: "add" },
   { href: "/settings", label: "Settings", icon: "settings" },
   { href: "/profile", label: "Profile", icon: "person" },
 ] as const;
 
-// Mobile counterpart to SideNav -- same 5 destinations (New Session routes
-// through /session/start's import-vs-manual picker rather than straight to
-// the manual form), reordered so New sits dead center of the row rather
-// than matching SideNav's order. Laid out as one flat justify-between row
-// so every item gets the same gap and the row's own edge padding is
-// symmetric left/right. Floats as a fully-rounded pill inset from the
-// screen edges (iOS-style quick-action bar) rather than a flush,
-// edge-to-edge bar.
+// Mobile counterpart to SideNav -- same 5 destinations, with New raised as
+// the center accent button. The active item's highlight springs in on each
+// page instead of just appearing.
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="glass-strong nav-pill fixed bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-full px-7 py-4 md:hidden">
-      {/* Specular highlight: a real gradient rather than another shadow
-          layer, so the top of the pill reads as glass catching light
-          instead of just a soft glow. Negative z-index (not 0) so it
-          paints behind the plain in-flow Links below -- a non-negative
-          z-index on an absolutely positioned element paints *above*
-          static in-flow content regardless of DOM order. Never intercepts
-          taps either way (pointer-events-none). */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-b from-white/30 via-white/5 to-transparent"
-      />
-      {ITEMS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-            pathname === item.href ? "text-lime" : "text-ink-muted"
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-          {item.label}
-        </Link>
-      ))}
+    <nav className="nav-pill fixed bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-[22px] px-3 py-2 md:hidden">
+      {ITEMS.map((item) => {
+        const active = pathname === item.href;
+        if (item.href === "/session/start") {
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              className="pressable -mt-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-lime text-on-lime shadow-[0_10px_30px_-8px_var(--color-lime)]"
+            >
+              <span className="material-symbols-outlined text-3xl">{item.icon}</span>
+            </Link>
+          );
+        }
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`pressable relative isolate flex w-14 flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[11px] font-semibold transition-colors duration-300 ${
+              active ? "text-lime" : "text-ink-muted"
+            }`}
+          >
+            {active && (
+              <motion.span
+                layoutId="bottom-nav-active"
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute inset-0 -z-10 rounded-2xl bg-surface-highest"
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
+            <span
+              className="material-symbols-outlined text-2xl"
+              style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+            >
+              {item.icon}
+            </span>
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

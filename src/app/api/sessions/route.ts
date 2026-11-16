@@ -5,6 +5,12 @@ import { getDefaultCommunityId } from "@/lib/community";
 import { prisma } from "@/lib/prisma";
 import { generateInitialRounds } from "@/lib/rotation";
 import { findOrCreatePlayer } from "@/lib/player";
+import { computeStandings } from "@/lib/standings";
+import { courtLabel, sortStandings } from "@/lib/types";
+
+// Standings are a per-session query, so the Home cards only get a leader /
+// podium for live sessions and this many of the most recent finished ones.
+const RECENT_FINISHED_WITH_PODIUM = 12;
 
 const bodySchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -32,17 +38,49 @@ export async function GET(req: NextRequest) {
     where: communityFilter(auth),
     orderBy: { date: "desc" },
     include: {
-      players: true,
-      rounds: { include: { matches: { select: { completed: true } } } },
+      players: { include: { player: { select: { name: true } } } },
+      rounds: {
+        orderBy: { roundNumber: "asc" },
+        include: {
+          matches: {
+            orderBy: { courtNumber: "asc" },
+            select: {
+              courtNumber: true,
+              completed: true,
+              team1Score: true,
+              team2Score: true,
+              team1Games: true,
+              team2Games: true,
+            },
+          },
+        },
+      },
       community: { select: { code: true } },
     },
   });
 
-  return NextResponse.json(
-    sessions.map((s) => {
+  let finishedWithPodium = 0;
+  const items = await Promise.all(
+    sessions.map(async (s) => {
       const allMatches = s.rounds.flatMap((r) => r.matches);
       const isLive = allMatches.some((m) => !m.completed);
       const status = allMatches.length === 0 ? null : isLive ? "LIVE" : "COMPLETED";
+      const setMode = s.scoringMode === "SET";
+
+      const currentRound = s.rounds.find((r) => r.matches.some((m) => !m.completed));
+      const liveCourts = (currentRound?.matches ?? [])
+        .filter((m) => !m.completed)
+        .map((m) => ({
+          courtNumber: m.courtNumber,
+          label: courtLabel(s, m.courtNumber),
+          team1: setMode ? m.team1Games : m.team1Score,
+          team2: setMode ? m.team2Games : m.team2Score,
+        }));
+
+      const wantsStandings =
+        status === "LIVE" ||
+        (status === "COMPLETED" && finishedWithPodium++ < RECENT_FINISHED_WITH_PODIUM);
+      const top = wantsStandings ? sortStandings(await computeStandings(s.id)).slice(0, 3) : [];
 
       return {
         id: s.id,
@@ -52,11 +90,26 @@ export async function GET(req: NextRequest) {
         courts: s.courts,
         communityCode: isAdmin ? (s.community?.code ?? null) : null,
         playerCount: s.players.length,
+        playerNames: s.players.map((p) => p.player.name),
         roundCount: s.rounds.length,
         status,
+        currentRoundNumber: currentRound?.roundNumber ?? null,
+        roundProgress: s.rounds.map((r) =>
+          r.matches.length ? r.matches.filter((m) => m.completed).length / r.matches.length : 0
+        ),
+        liveCourts,
+        top: top.map((r) => ({
+          name: r.name,
+          score: r.score,
+          wins: r.wins,
+          losses: r.losses,
+          winStreak: r.winStreak,
+        })),
       };
     })
   );
+
+  return NextResponse.json(items);
 }
 
 export async function POST(req: NextRequest) {

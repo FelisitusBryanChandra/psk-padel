@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
 export function ThemeToggle() {
   const [light, setLight] = useState(false);
@@ -20,11 +21,20 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label="Toggle theme"
-      className="neu-raised flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-shadow active:shadow-none"
+      className="pressable relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-surface-high text-ink"
     >
-      <span className="material-symbols-outlined text-lg">
-        {light ? "dark_mode" : "light_mode"}
-      </span>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={light ? "dark" : "light"}
+          initial={{ rotate: -90, scale: 0.4, opacity: 0 }}
+          animate={{ rotate: 0, scale: 1, opacity: 1 }}
+          exit={{ rotate: 90, scale: 0.4, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 22 }}
+          className="material-symbols-outlined text-xl"
+        >
+          {light ? "dark_mode" : "light_mode"}
+        </motion.span>
+      </AnimatePresence>
     </button>
   );
 }

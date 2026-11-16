@@ -1,11 +1,13 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, animate, motion, useAnimate, useMotionValue } from "motion/react";
 import { cycleServe, nextServeState, servingPlayerId, type ServeState } from "@/lib/serve";
 import { applyPoint, isTiebreak, pointLabel } from "@/lib/tennisScore";
 import { Spinner } from "@/app/Spinner";
 import { LoadingModal } from "@/app/LoadingModal";
+import { RollingNumber } from "@/app/RollingNumber";
 import { rememberFinishedMatch } from "@/lib/lastFinishedMatch";
 import { readRespectMaxPoints } from "@/lib/settings";
 import { courtLabel, type MatchDto, type SessionDto } from "@/lib/types";
@@ -23,6 +25,8 @@ type SessionConfig = Pick<
   SessionDto,
   "pointsPerServe" | "pointsPerMatch" | "scoringMode" | "gamesPerSet" | "goldenPoint" | "courtNames"
 >;
+
+const SPRING = { type: "spring", stiffness: 420, damping: 32 } as const;
 
 export default function ScoreboardPage({
   params,
@@ -53,9 +57,10 @@ export default function ScoreboardPage({
   // the background, and this switches to the same "finished" view a match
   // that was already completed on load shows, without waiting on a refetch.
   const [justFinished, setJustFinished] = useState(false);
-  // Snapshots taken before each awarded point. A tennis point can't be undone
-  // by decrementing: it may have rolled a game (points reset, games +1, serve
-  // flipped) or closed the set, so only the whole prior state restores it.
+  // Snapshots taken before each awarded point, in both scoring modes. A
+  // tennis point can't be undone by decrementing (it may have rolled a game
+  // or flipped serve), so only the whole prior state restores it; Points
+  // mode uses the same stack so undo also restores serve rotation.
   const [pointHistory, setPointHistory] = useState<LiveState[]>([]);
 
   useEffect(() => {
@@ -88,34 +93,32 @@ export default function ScoreboardPage({
       });
   }, [id, matchId]);
 
-  function adjust(team: 1 | 2, delta: 1 | -1) {
-    // Race-to-N is a shared target: every point comes off the other team, so
-    // the cap is on team1Score + team2Score together (e.g. 11-10 at a cap of
-    // 21), not on each team's own score independently (which would let both
-    // sides reach the cap at once, like 21-21).
+  // Points mode: awards one point. Race-to-N is a shared target: every point
+  // comes off the other team, so the cap is on team1Score + team2Score
+  // together (e.g. 11-10 at a cap of 21), not on each side independently.
+  // Returns false when the cap blocked the point.
+  function addPoint(team: 1 | 2): boolean {
     const cap = readRespectMaxPoints() ? (session?.pointsPerMatch ?? Infinity) : Infinity;
-    setLive((prev) => {
-      const prevTotal = prev.team1Score + prev.team2Score;
-      if (delta > 0 && prevTotal >= cap) return prev;
-      const team1Score = team === 1 ? Math.max(0, prev.team1Score + delta) : prev.team1Score;
-      const team2Score = team === 2 ? Math.max(0, prev.team2Score + delta) : prev.team2Score;
-      const newTotal = team1Score + team2Score;
-      const serve = nextServeState(prev, prevTotal, newTotal, session?.pointsPerServe ?? 5);
-      // `serve` may just be `prev` unchanged (including its old scores) when
-      // no boundary was crossed, so it must spread BEFORE the fresh scores
-      // or it'll clobber them back to the old values.
-      return { ...prev, ...serve, team1Score, team2Score };
-    });
+    const prevTotal = live.team1Score + live.team2Score;
+    if (prevTotal >= cap) return false;
+    const team1Score = team === 1 ? live.team1Score + 1 : live.team1Score;
+    const team2Score = team === 2 ? live.team2Score + 1 : live.team2Score;
+    const serve = nextServeState(live, prevTotal, prevTotal + 1, session?.pointsPerServe ?? 5);
+    setPointHistory((h) => [...h, live]);
+    // `serve` may just be `live` unchanged (including its old scores) when
+    // no boundary was crossed, so it must spread BEFORE the fresh scores.
+    setLive({ ...live, ...serve, team1Score, team2Score });
+    return true;
   }
 
-  function scorePoint(team: 1 | 2) {
-    if (!match || !session) return;
+  // Set mode: awards one tennis point. Returns false when blocked.
+  function scorePoint(team: 1 | 2): boolean {
+    if (!match || !session) return false;
     const cap = readRespectMaxPoints();
-    // Same rule as the Points-mode cap in adjust(): gamesPerSet is a shared
-    // target on the combined games played, so block further scoring once
-    // team1Games + team2Games reaches it, tied or not.
+    // gamesPerSet is a shared target on the combined games played, so block
+    // further scoring once team1Games + team2Games reaches it, tied or not.
     if (cap && live.team1Games + live.team2Games >= session.gamesPerSet) {
-      return;
+      return false;
     }
     setPointHistory((h) => [...h, live]);
     const result = applyPoint(live, team, {
@@ -126,6 +129,7 @@ export default function ScoreboardPage({
     if (cap && result.setComplete) {
       void finalizeInBackground(result.team1Games, result.team2Games);
     }
+    return true;
   }
 
   async function finalizeInBackground(team1Games: number, team2Games: number) {
@@ -139,11 +143,12 @@ export default function ScoreboardPage({
     rememberFinishedMatch(match.id);
   }
 
-  function undoPoint() {
+  function undoPoint(): boolean {
     const previous = pointHistory.at(-1);
-    if (!previous) return;
+    if (!previous) return false;
     setLive(previous);
     setPointHistory((h) => h.slice(0, -1));
+    return true;
   }
 
   async function finish() {
@@ -192,24 +197,69 @@ export default function ScoreboardPage({
     return <LoadingModal open />;
   }
 
+  const setMode = session.scoringMode === "SET";
+
   if (match.completed || justFinished) {
+    const s1 = setMode ? live.team1Games : live.team1Score;
+    const s2 = setMode ? live.team2Games : live.team2Score;
+    const winner =
+      s1 === s2
+        ? null
+        : s1 > s2
+          ? `${match.team1Player1.name} & ${match.team1Player2.name}`
+          : `${match.team2Player1.name} & ${match.team2Player2.name}`;
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 text-center">
-        <p className="text-sm font-bold uppercase tracking-widest text-live">FINISHED!</p>
-        <p className="font-heading text-4xl font-black text-ink">
-          {session.scoringMode === "SET"
-            ? `${live.team1Games}–${live.team2Games}`
-            : `${live.team1Score}–${live.team2Score}`}
-        </p>
-        <button
+      <main className="relative flex min-h-dvh flex-col items-center justify-center gap-5 overflow-hidden px-6 text-center">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            aria-hidden="true"
+            className="absolute h-64 w-64 rounded-full border-2 border-lime"
+            initial={{ scale: 0.2, opacity: 0.8 }}
+            animate={{ scale: 3.2, opacity: 0 }}
+            transition={{ duration: 1.8, delay: i * 0.35, ease: [0.22, 1, 0.36, 1] }}
+          />
+        ))}
+        <motion.p
+          initial={{ opacity: 0, y: 12, letterSpacing: "0.6em" }}
+          animate={{ opacity: 1, y: 0, letterSpacing: "0.2em" }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="font-heading text-lg font-extrabold uppercase text-lime"
+        >
+          Finished
+        </motion.p>
+        <motion.p
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
+          className="font-heading text-[7rem] font-black leading-none text-ink tabular-nums"
+        >
+          {s1}
+          <span className="text-ink-muted">–</span>
+          {s2}
+        </motion.p>
+        {winner && (
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.5 }}
+            className="font-heading text-2xl font-bold uppercase text-ink"
+          >
+            {winner} win
+          </motion.p>
+        )}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
           onClick={() => {
             rememberFinishedMatch(match.id);
             router.back();
           }}
-          className="neu-raised rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest text-ink-muted transition-shadow active:shadow-none"
+          className="pressable mt-2 rounded-2xl bg-lime px-8 py-3 font-heading text-lg font-extrabold uppercase tracking-wide text-on-lime"
         >
-          Back
-        </button>
+          Back to session
+        </motion.button>
       </main>
     );
   }
@@ -220,219 +270,300 @@ export default function ScoreboardPage({
     team2Player1Id: match.team2Player1.id,
     team2Player2Id: match.team2Player2.id,
   });
-
-  const setMode = session.scoringMode === "SET";
   const tiebreakNow = setMode && isTiebreak(live, session.gamesPerSet);
 
+  // Which side is ahead: games first in Set mode, then the in-game points.
+  const diff = setMode
+    ? live.team1Games - live.team2Games || live.team1GamePoints - live.team2GamePoints
+    : live.team1Score - live.team2Score;
+
+  const teams = ([1, 2] as const).map((team) => {
+    const p1 = team === 1 ? match.team1Player1 : match.team2Player1;
+    const p2 = team === 1 ? match.team1Player2 : match.team2Player2;
+    const own = team === 1 ? live.team1GamePoints : live.team2GamePoints;
+    const other = team === 1 ? live.team2GamePoints : live.team1GamePoints;
+    return {
+      team,
+      names: [p1.name, p2.name] as const,
+      serverName: server === p1.id ? p1.name : server === p2.id ? p2.name : null,
+      score: team === 1 ? live.team1Score : live.team2Score,
+      games: team === 1 ? live.team1Games : live.team2Games,
+      pointText: setMode ? pointLabel(own, other, tiebreakNow, session.goldenPoint) : "",
+      leading: team === 1 ? diff > 0 : diff < 0,
+    };
+  });
+  const ordered = swapped ? [teams[1], teams[0]] : teams;
+
   return (
-    <main className="landscape-force flex min-h-dvh flex-col px-6 py-4">
-      <div className="flex items-center justify-between">
+    <main className="landscape-force flex h-dvh flex-col bg-bg">
+      <div className="flex items-center justify-between px-4 py-2">
         <button
           onClick={() => {
             rememberFinishedMatch(match.id);
             router.back();
           }}
           aria-label="Back to session"
-          className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-ink-muted"
+          className="pressable flex h-9 w-9 items-center justify-center rounded-xl bg-surface-high text-ink"
         >
-          <span className="material-symbols-outlined text-base">arrow_back</span>
-          Back
+          <span className="material-symbols-outlined text-xl">arrow_back</span>
         </button>
-        <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-ink-muted">
-          <span className="material-symbols-outlined text-base">location_on</span>
-          {courtLabel(session, match.courtNumber)}
-          <button
+        <div className="flex items-center gap-2">
+          <span className="font-heading text-xl font-extrabold uppercase tracking-wide text-ink">
+            {courtLabel(session, match.courtNumber)}
+          </span>
+          <motion.button
             onClick={() => setSwapped((s) => !s)}
             aria-label="Switch sides"
-            className="material-symbols-outlined text-base text-accent-blue"
+            whileTap={{ scale: 0.85, rotate: 180 }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-high text-ink"
           >
-            swap_horiz
-          </button>
-        </span>
-        <span className="flex items-center gap-1 rounded-full bg-live-bg/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-live">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
+            <span className="material-symbols-outlined text-xl">swap_horiz</span>
+          </motion.button>
+        </div>
+        <span className="flex items-center gap-2 rounded-full bg-live-bg px-3 py-1 font-heading text-sm font-bold uppercase tracking-wider text-live">
+          <span className="live-dot" />
           {tiebreakNow ? "Tiebreak" : "Live"}
         </span>
       </div>
 
-      <div className="flex flex-1 items-center justify-center gap-8">
-        <TeamPanel
-          name={
-            swapped
-              ? `${match.team2Player1.name} & ${match.team2Player2.name}`
-              : `${match.team1Player1.name} & ${match.team1Player2.name}`
-          }
-          score={swapped ? live.team2Score : live.team1Score}
-          setMode={setMode}
-          pointLabelText={
-            setMode
-              ? pointLabel(
-                  swapped ? live.team2GamePoints : live.team1GamePoints,
-                  swapped ? live.team1GamePoints : live.team2GamePoints,
-                  tiebreakNow,
-                  session.goldenPoint
-                )
-              : undefined
-          }
-          gamesWon={setMode ? (swapped ? live.team2Games : live.team1Games) : undefined}
-          serving={
-            swapped
-              ? server === match.team2Player1.id || server === match.team2Player2.id
-              : server === match.team1Player1.id || server === match.team1Player2.id
-          }
-          onServe={() => setLive((prev) => ({ ...prev, ...cycleServe(prev) }))}
-          onAdjust={(d) => adjust(swapped ? 2 : 1, d)}
-          onScorePoint={() => scorePoint(swapped ? 2 : 1)}
-        />
-        <div className="h-32 w-px bg-outline/30" />
-        <TeamPanel
-          name={
-            swapped
-              ? `${match.team1Player1.name} & ${match.team1Player2.name}`
-              : `${match.team2Player1.name} & ${match.team2Player2.name}`
-          }
-          score={swapped ? live.team1Score : live.team2Score}
-          setMode={setMode}
-          pointLabelText={
-            setMode
-              ? pointLabel(
-                  swapped ? live.team1GamePoints : live.team2GamePoints,
-                  swapped ? live.team2GamePoints : live.team1GamePoints,
-                  tiebreakNow,
-                  session.goldenPoint
-                )
-              : undefined
-          }
-          gamesWon={setMode ? (swapped ? live.team1Games : live.team2Games) : undefined}
-          serving={
-            swapped
-              ? server === match.team1Player1.id || server === match.team1Player2.id
-              : server === match.team2Player1.id || server === match.team2Player2.id
-          }
-          onServe={() => setLive((prev) => ({ ...prev, ...cycleServe(prev) }))}
-          onAdjust={(d) => adjust(swapped ? 1 : 2, d)}
-          onScorePoint={() => scorePoint(swapped ? 1 : 2)}
-        />
+      <div className="flex min-h-0 flex-1 gap-1 px-1">
+        {ordered.map((t) => (
+          <TeamHalf
+            key={t.team}
+            names={t.names}
+            serverName={t.serverName}
+            leading={t.leading}
+            setMode={setMode}
+            score={t.score}
+            games={t.games}
+            pointText={t.pointText}
+            onScore={() => (setMode ? scorePoint(t.team) : addPoint(t.team))}
+            onUndo={undoPoint}
+            onServe={() => setLive((prev) => ({ ...prev, ...cycleServe(prev) }))}
+          />
+        ))}
       </div>
 
-      {setMode && (
+      <div className="flex items-center gap-2 px-4 py-2">
         <button
           onClick={undoPoint}
           disabled={pointHistory.length === 0}
-          className="mb-3 flex items-center justify-center gap-2 self-center rounded-full border border-outline px-4 py-2 text-xs font-black uppercase tracking-widest text-ink-muted transition-colors active:scale-95 disabled:opacity-30"
+          className="pressable flex items-center gap-1.5 rounded-xl bg-surface-high px-4 py-2.5 font-heading text-base font-bold uppercase tracking-wide text-ink disabled:opacity-30"
         >
-          <span className="material-symbols-outlined text-base">undo</span>
-          Undo Point
+          <span className="material-symbols-outlined text-lg">undo</span>
+          Undo
         </button>
-      )}
-
-      <div className="mb-2 flex gap-3">
+        <span className="flex-1 text-center text-xs text-ink-muted">
+          Tap a side to score · swipe down to undo
+        </span>
         <button
           onClick={saveProgress}
           disabled={updating}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-surface-highest py-4 font-heading text-base font-black uppercase tracking-wide text-ink shadow-lg active:scale-[0.98] transition-transform disabled:opacity-40"
+          className="pressable flex items-center gap-1.5 rounded-xl bg-surface-high px-4 py-2.5 font-heading text-base font-bold uppercase tracking-wide text-ink disabled:opacity-40"
         >
-          {updating && <Spinner className="text-xl" />}
-          {updating ? "Saving..." : "Update"}
+          {updating ? <Spinner className="text-lg" /> : <span className="material-symbols-outlined text-lg">cloud_upload</span>}
+          {updating ? "Saving" : "Update"}
         </button>
         <button
           onClick={finish}
           disabled={finishing}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-live py-4 font-heading text-base font-black uppercase tracking-wide text-white shadow-lg active:scale-[0.98] transition-transform disabled:opacity-40"
+          className="pressable flex items-center gap-1.5 rounded-xl bg-live px-4 py-2.5 font-heading text-base font-bold uppercase tracking-wide text-white disabled:opacity-40"
         >
-          {finishing && <Spinner className="text-xl" />}
-          {finishing ? "Saving..." : "Finish Match"}
+          {finishing ? <Spinner className="text-lg" /> : <span className="material-symbols-outlined text-lg">flag</span>}
+          {finishing ? "Saving" : "Finish"}
         </button>
       </div>
     </main>
   );
 }
 
-function TeamPanel({
-  name,
-  score,
-  serving,
-  onServe,
-  onAdjust,
+type Burst = { id: number; x: number; y: number };
+
+// One team's half of the court. The whole half is the score button: tap to
+// add a point, drag down past the threshold to undo. Gesture math runs in
+// the half's own coordinates, which differ from the screen's when
+// .landscape-force has rotated the page 90deg on a portrait phone.
+function TeamHalf({
+  names,
+  serverName,
+  leading,
   setMode,
-  pointLabelText,
-  gamesWon,
-  onScorePoint,
+  score,
+  games,
+  pointText,
+  onScore,
+  onUndo,
+  onServe,
 }: {
-  name: string;
-  score: number;
-  serving: boolean;
-  onServe: () => void;
-  onAdjust: (delta: 1 | -1) => void;
+  names: readonly [string, string];
+  serverName: string | null;
+  leading: boolean;
   setMode: boolean;
-  pointLabelText?: string;
-  gamesWon?: number;
-  onScorePoint: () => void;
+  score: number;
+  games: number;
+  pointText: string;
+  onScore: () => boolean;
+  onUndo: () => boolean;
+  onServe: () => void;
 }) {
+  const [scope, animateScope] = useAnimate<HTMLDivElement>();
+  const dragY = useMotionValue(0);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const [bursts, setBursts] = useState<Burst[]>([]);
+  const nextBurst = useRef(0);
+
+  function isRotated() {
+    return window.matchMedia("(max-width: 900px) and (orientation: portrait)").matches;
+  }
+
+  // Screen-space pointer delta -> this half's own (possibly rotated) axes.
+  function localDelta(e: React.PointerEvent) {
+    const s = start.current!;
+    const sx = e.clientX - s.x;
+    const sy = e.clientY - s.y;
+    return isRotated() ? { dx: sy, dy: -sx } : { dx: sx, dy: sy };
+  }
+
+  function localPoint(e: React.PointerEvent) {
+    const r = scope.current!.getBoundingClientRect();
+    return isRotated()
+      ? { x: e.clientY - r.top, y: r.right - e.clientX }
+      : { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    if ((e.target as HTMLElement).closest("[data-no-score]")) return;
+    start.current = { x: e.clientX, y: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!start.current) return;
+    dragY.set(Math.max(0, localDelta(e).dy) * 0.35);
+  }
+
+  function onPointerUp(e: React.PointerEvent) {
+    if (!start.current) return;
+    const { dx, dy } = localDelta(e);
+    const point = localPoint(e);
+    start.current = null;
+    animate(dragY, 0, { type: "spring", stiffness: 500, damping: 30 });
+
+    if (dy > 70) {
+      if (onUndo()) navigator.vibrate?.([8, 40, 8]);
+      return;
+    }
+    if (Math.abs(dx) > 14 || Math.abs(dy) > 14) return;
+
+    if (onScore()) {
+      const id = nextBurst.current++;
+      setBursts((b) => [...b, { id, ...point }]);
+      setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 750);
+      navigator.vibrate?.(12);
+    } else {
+      animateScope(scope.current!, { x: [0, -12, 12, -7, 7, 0] }, { duration: 0.4 });
+      navigator.vibrate?.([20, 30, 20]);
+    }
+  }
+
   return (
-    <div
-      className={`flex flex-col items-center gap-3 rounded-2xl border px-8 py-5 transition-colors ${
-        serving ? "border-lime/50 bg-lime/5" : "border-transparent"
+    <motion.div
+      ref={scope}
+      layout
+      transition={SPRING}
+      style={{ y: dragY, containerType: "size", touchAction: "none" }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => {
+        start.current = null;
+        animate(dragY, 0, SPRING);
+      }}
+      className={`relative flex min-w-0 flex-1 cursor-pointer select-none flex-col overflow-hidden rounded-3xl px-5 py-4 transition-colors duration-500 ${
+        leading ? "bg-lime text-on-lime" : "bg-surface-high text-ink"
       }`}
     >
-      <button
-        onClick={onServe}
-        aria-label="Switch serve to this side"
-        className={`relative h-9 w-9 rounded-full p-0 transition-shadow ${
-          serving ? "bg-lime text-on-lime shadow-md shadow-lime/30" : "neu-raised text-outline"
-        }`}
-      >
-        <span
-          style={{
-            ...(serving ? { fontVariationSettings: "'FILL' 1" } : undefined),
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
-          className="material-symbols-outlined block text-lg leading-none"
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {names.map((n) => (
+            <p
+              key={n}
+              className="truncate font-heading text-[clamp(1rem,9cqh,1.75rem)] font-extrabold uppercase leading-[1.05]"
+            >
+              {n}
+              {serverName === n && (
+                <motion.span
+                  layoutId="serve-ball"
+                  transition={SPRING}
+                  className="ml-2 inline-block h-[0.45em] w-[0.45em] rounded-full bg-current align-middle"
+                />
+              )}
+            </p>
+          ))}
+        </div>
+        <button
+          data-no-score
+          onClick={onServe}
+          aria-label="Switch serve to this side"
+          className={`pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+            leading ? "bg-on-lime/10" : "bg-surface-highest"
+          }`}
         >
-          sports_tennis
-        </span>
-      </button>
-      <p
-        className={`max-w-[10rem] text-center text-sm font-bold uppercase tracking-wide transition-colors ${
-          serving ? "text-lime" : "text-ink"
-        }`}
-      >
-        {name}
-      </p>
-      {setMode ? (
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-ink-muted">
-            Games: {gamesWon}
+          <span
+            className="material-symbols-outlined text-xl"
+            style={serverName ? { fontVariationSettings: "'FILL' 1" } : undefined}
+          >
+            sports_tennis
           </span>
-          <button
-            onClick={onScorePoint}
-            className="neu-inset flex w-28 items-center justify-center rounded-2xl py-3 text-center font-heading text-3xl font-black tabular-nums text-lime transition-transform active:scale-95"
-          >
-            {pointLabelText}
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onAdjust(-1)}
-            className="neu-raised flex h-11 w-11 items-center justify-center rounded-full text-ink-muted transition-shadow active:shadow-none"
-          >
-            <span className="material-symbols-outlined">remove</span>
-          </button>
-          <span className="neu-inset w-24 rounded-2xl py-1 text-center font-heading text-6xl font-black tabular-nums text-lime">
-            {score}
-          </span>
-          <button
-            onClick={() => onAdjust(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-lime text-on-lime shadow-md shadow-lime/20 active:scale-90 transition-transform"
-          >
-            <span className="material-symbols-outlined">add</span>
-          </button>
-        </div>
-      )}
-    </div>
+        </button>
+      </div>
+
+      <div className="relative z-10 flex flex-1 items-center justify-center">
+        {setMode ? (
+          <div className="flex flex-col items-center">
+            <div className="relative h-[46cqh] overflow-hidden">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={pointText}
+                  initial={{ y: "70%", opacity: 0, scale: 0.8 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: "-70%", opacity: 0, scale: 0.8 }}
+                  transition={SPRING}
+                  className="block font-heading text-[46cqh] font-black leading-none"
+                >
+                  {pointText}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+            <span className="mt-1 font-heading text-[clamp(1rem,8cqh,1.6rem)] font-bold uppercase tracking-wider opacity-70">
+              Games <RollingNumber value={games} className="align-[-0.12em]" />
+            </span>
+          </div>
+        ) : (
+          <RollingNumber value={score} className="font-heading text-[60cqh] font-black" />
+        )}
+      </div>
+
+      <AnimatePresence>
+        {bursts.map((b) => (
+          <motion.span key={b.id} className="pointer-events-none absolute" style={{ left: b.x, top: b.y }}>
+            <motion.span
+              className="absolute -left-24 -top-24 h-48 w-48 rounded-full bg-current"
+              initial={{ scale: 0, opacity: 0.25 }}
+              animate={{ scale: 2.4, opacity: 0 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.span
+              className="absolute -left-6 -top-10 font-heading text-3xl font-black"
+              initial={{ y: 0, opacity: 1, scale: 0.7 }}
+              animate={{ y: -60, opacity: 0, scale: 1.3 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            >
+              +1
+            </motion.span>
+          </motion.span>
+        ))}
+      </AnimatePresence>
+    </motion.div>
   );
 }

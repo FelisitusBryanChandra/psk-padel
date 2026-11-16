@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Outfit, Instrument_Sans } from "next/font/google";
+import { Barlow_Condensed, Inter } from "next/font/google";
 import Script from "next/script";
 import { WaveBackground } from "./WaveBackground";
 import "./globals.css";
 
-const outfit = Outfit({
+const barlowCondensed = Barlow_Condensed({
   variable: "--font-heading",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
   subsets: ["latin"],
 });
 
-const instrumentSans = Instrument_Sans({
+const inter = Inter({
   variable: "--font-body",
-  weight: ["400", "500", "600"],
   subsets: ["latin"],
 });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
       // The theme-no-flash script below stamps `light` onto <html> before
       // hydration, so this one element is expected to differ from the server.
       suppressHydrationWarning
-      className={`${outfit.variable} ${instrumentSans.variable} h-full antialiased`}
+      className={`${barlowCondensed.variable} ${inter.variable} h-full antialiased`}
     >
       <head>
         <link
@@ -45,7 +45,7 @@ export default function RootLayout({
           id="theme-no-flash"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}var a=localStorage.getItem('psk_accent_theme');if(a&&a!=='mint'){document.documentElement.setAttribute('data-accent',a)}var b=localStorage.getItem('psk_base_theme');if(b&&b!=='petrol'){document.documentElement.setAttribute('data-base',b)}}catch(e){}`,
+            __html: `try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light')}var a=localStorage.getItem('psk_accent_theme');if(a==='flame'||a==='ice'){document.documentElement.setAttribute('data-accent',a)}}catch(e){}`,
           }}
         />
         <WaveBackground />

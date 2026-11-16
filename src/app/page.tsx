@@ -1,24 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { BottomNav } from "./BottomNav";
-import { DeleteSessionButton } from "./DeleteSessionButton";
-import { Logo } from "./Logo";
+import { HomeHero } from "./HomeHero";
+import { SessionCard, type SessionListItem } from "./SessionCard";
 import { SideNav } from "./SideNav";
-import { ThemeToggle } from "./ThemeToggle";
-
-type SessionListItem = {
-  id: string;
-  name: string;
-  date: string;
-  sessionType: "AMERICANO" | "MEXICANO";
-  courts: number;
-  communityCode: string | null;
-  playerCount: number;
-  roundCount: number;
-  status: "LIVE" | "COMPLETED" | null;
-};
 
 function HomeSkeleton() {
   return (
@@ -76,6 +62,14 @@ export default function HomePage() {
     refresh();
   }, [refresh]);
 
+  // Keep live tickets' court scores ticking while any session is live.
+  const anyLive = sessions?.some((s) => s.status === "LIVE") ?? false;
+  useEffect(() => {
+    if (!anyLive) return;
+    const interval = setInterval(refresh, 10000);
+    return () => clearInterval(interval);
+  }, [anyLive, refresh]);
+
   if (!sessions) {
     return <HomeSkeleton />;
   }
@@ -105,43 +99,7 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Logo className="h-8 w-auto text-ink" />
-          <h1 className="font-heading text-2xl font-black tracking-tight text-ink">PSK Padel</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-        </div>
-      </header>
-
-      <section className="mb-6">
-        <h2 className="font-heading text-2xl font-black text-ink">Your Sessions</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Manage and track your Padel Americano and Mexicano tournaments.
-        </p>
-      </section>
-
-      {sessions.length > 0 && (
-        <div className="mb-6 flex gap-4 border-b border-outline/30 pb-2">
-          <button
-            onClick={() => setTab("ongoing")}
-            className={`border-b-2 px-1 pb-2 text-xs font-black uppercase tracking-widest ${
-              tab === "ongoing" ? "border-lime text-lime" : "border-transparent text-ink-muted"
-            }`}
-          >
-            Ongoing
-          </button>
-          <button
-            onClick={() => setTab("finished")}
-            className={`border-b-2 px-1 pb-2 text-xs font-black uppercase tracking-widest ${
-              tab === "finished" ? "border-lime text-lime" : "border-transparent text-ink-muted"
-            }`}
-          >
-            Finished
-          </button>
-        </div>
-      )}
+      <HomeHero sessions={sessions} tab={tab} onTab={setTab} />
 
       {isAdmin && communities.length > 1 && (
         <div className="mb-6 -mt-2 flex flex-wrap gap-2">
@@ -217,78 +175,14 @@ export default function HomePage() {
             </a>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="stagger flex flex-col gap-4">
             {monthSessions.map((s) => (
-              <div
+              <SessionCard
                 key={s.id}
-                className="glass relative rounded-xl p-4 transition-colors active:scale-[0.98]"
-              >
-                <Link href={`/session/${s.id}`} className="absolute inset-0" aria-label={s.name} />
-                <div className="pointer-events-none relative">
-                  <div className="mb-3 flex items-start justify-between">
-                    <div>
-                      {s.status && (
-                        <div className="mb-1 flex items-center gap-2">
-                          {s.status === "LIVE" && (
-                            <span className="h-2 w-2 rounded-full bg-live animate-pulse" />
-                          )}
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-widest ${
-                              s.status === "LIVE" ? "text-live" : "text-ink-muted"
-                            }`}
-                          >
-                            {s.status}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-heading text-lg font-bold text-ink">{s.name}</h4>
-                        <span className="rounded-full bg-surface-highest px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-lime-dim">
-                          {s.sessionType}
-                        </span>
-                        {isAdmin && s.communityCode && (
-                          <span className="rounded-full bg-surface-highest px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                            #{s.communityCode}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1 flex items-center gap-1 text-sm text-ink-muted">
-                        <span className="material-symbols-outlined text-sm">calendar_today</span>
-                        {new Date(s.date).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </div>
-                    </div>
-                    <div className="pointer-events-auto flex items-center gap-1">
-                      <DeleteSessionButton sessionId={s.id} name={s.name} onDeleted={refresh} />
-                      <span className="material-symbols-outlined text-ink-muted">
-                        chevron_right
-                      </span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 border-t border-outline/30 pt-3">
-                    <div className="neu-inset-sm rounded-lg p-2 text-center">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                        Players
-                      </p>
-                      <p className="font-heading text-lg font-bold text-ink">{s.playerCount}</p>
-                    </div>
-                    <div className="neu-inset-sm rounded-lg p-2 text-center">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                        Courts
-                      </p>
-                      <p className="font-heading text-lg font-bold text-ink">{s.courts}</p>
-                    </div>
-                    <div className="neu-inset-sm rounded-lg p-2 text-center">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted">
-                        Rounds
-                      </p>
-                      <p className="font-heading text-lg font-bold text-ink">{s.roundCount}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                session={s}
+                showCommunity={isAdmin}
+                onDeleted={refresh}
+              />
             ))}
           </div>
         </section>

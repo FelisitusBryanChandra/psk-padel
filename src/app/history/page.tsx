@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { BottomNav } from "@/app/BottomNav";
-import { Logo } from "@/app/Logo";
+import { PageHero, Segmented } from "@/app/PageHero";
 import { SideNav } from "@/app/SideNav";
 import { Spinner } from "@/app/Spinner";
-import { ThemeToggle } from "@/app/ThemeToggle";
 import type { MatchHistoryEntry } from "@/lib/matchHistory";
 
 const FILTERS = ["All", "Americano", "Mexicano"] as const;
@@ -13,22 +13,81 @@ type Filter = (typeof FILTERS)[number];
 
 function HistorySkeleton() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-surface-highest" />
-          <div className="h-6 w-32 animate-pulse rounded bg-surface-highest" />
-        </div>
-        <div className="h-9 w-9 animate-pulse rounded-full bg-surface-highest" />
-      </header>
-      <div className="flex flex-col gap-3">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="glass-strong h-20 animate-pulse rounded-xl" />
-        ))}
+    <div className="flex flex-col gap-3">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="h-28 animate-pulse rounded-3xl bg-surface" />
+      ))}
+    </div>
+  );
+}
+
+// "21-17" -> [21, 17]; anything unparsable falls back to showing the raw text.
+function splitScore(score: string): [string, string] | null {
+  const m = score.match(/^\s*(\d+)\s*[-–]\s*(\d+)\s*$/);
+  return m ? [m[1], m[2]] : null;
+}
+
+function MatchRow({ h, i }: { h: MatchHistoryEntry; i: number }) {
+  const parts = splitScore(h.score);
+  const s1 = parts ? Number(parts[0]) : 0;
+  const s2 = parts ? Number(parts[1]) : 0;
+  const teams = [
+    { names: h.team1, score: parts?.[0], won: s1 > s2 },
+    { names: h.team2, score: parts?.[1], won: s2 > s1 },
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: Math.min(i, 8) * 0.05 }}
+      className="overflow-hidden rounded-3xl border border-outline bg-surface"
+    >
+      <div className="flex items-center justify-between gap-2 px-4 pt-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+          {h.court}
+        </span>
+        {h.title && (
+          <span className="rounded-full bg-live-bg px-2.5 py-0.5 font-heading text-xs font-bold uppercase tracking-wider text-live">
+            {h.title}
+          </span>
+        )}
       </div>
-      <SideNav />
-      <BottomNav />
-    </main>
+      <div className="px-4 pb-3 pt-1">
+        {teams.map((t, idx) => (
+          <div
+            key={idx}
+            className={`flex items-center gap-3 py-1.5 ${idx === 0 ? "border-b border-outline" : ""}`}
+          >
+            {t.won ? (
+              <span className="material-symbols-outlined text-lg text-lime" style={{ fontVariationSettings: "'FILL' 1" }}>
+                trophy
+              </span>
+            ) : (
+              <span className="w-[18px]" />
+            )}
+            <span
+              className={`min-w-0 flex-1 truncate text-base ${
+                t.won ? "font-semibold text-ink" : "text-ink-muted"
+              }`}
+            >
+              {t.names[0]} &amp; {t.names[1]}
+            </span>
+            {t.score !== undefined && (
+              <span
+                className={`font-heading text-4xl font-black leading-none tabular-nums ${
+                  t.won ? "text-lime" : "text-ink-muted"
+                }`}
+              >
+                {t.score}
+              </span>
+            )}
+          </div>
+        ))}
+        {!parts && (
+          <p className="mt-1 text-right font-heading text-2xl font-black text-ink">{h.score}</p>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
@@ -62,92 +121,82 @@ export default function HistoryPage() {
     setLoadingMore(false);
   }
 
-  if (!entries) {
-    return <HistorySkeleton />;
+  // Group consecutive matches by day + session so each block reads like a
+  // results page for that night.
+  const groups: { key: string; date: string; session: string; type: string; items: MatchHistoryEntry[] }[] = [];
+  for (const h of entries ?? []) {
+    const key = `${h.date.slice(0, 10)}|${h.sessionName}`;
+    const last = groups.at(-1);
+    if (last && last.key === key) last.items.push(h);
+    else groups.push({ key, date: h.date, session: h.sessionName, type: h.sessionType, items: [h] });
   }
 
+  let rowIndex = 0;
+
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-24 pt-4 md:max-w-xl lg:max-w-2xl">
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Logo className="h-8 w-auto text-ink" />
-          <h1 className="font-heading text-2xl font-black tracking-tight text-ink">History</h1>
-        </div>
-        <ThemeToggle />
-      </header>
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-28 pt-4 md:max-w-xl lg:max-w-2xl">
+      <PageHero
+        line1="Match"
+        line2="Log."
+        ghost="HISTORY"
+        sub={
+          entries
+            ? `${entries.length}${hasMore ? "+" : ""} match${entries.length === 1 && !hasMore ? "" : "es"} on record`
+            : "Loading results…"
+        }
+      >
+        <Segmented
+          id="history-filter"
+          value={filter}
+          options={FILTERS.map((f) => ({ value: f, label: f }))}
+          onChange={setFilter}
+        />
+      </PageHero>
 
-      <div className="mb-6 flex gap-2">
-        {FILTERS.map((label) => (
-          <button
-            key={label}
-            onClick={() => setFilter(label)}
-            className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${
-              filter === label ? "bg-lime text-on-lime" : "neu-raised text-ink-muted"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {entries.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center text-center">
-          <span className="material-symbols-outlined mb-4 text-7xl text-surface-highest">
-            history
-          </span>
-          <h3 className="font-heading text-lg font-bold text-ink">No Matches Yet</h3>
+      {!entries ? (
+        <HistorySkeleton />
+      ) : entries.length === 0 ? (
+        <div className="mt-10 flex flex-col items-center text-center">
+          <span className="material-symbols-outlined mb-3 text-7xl text-surface-highest">history</span>
+          <h3 className="font-heading text-2xl font-extrabold uppercase text-ink">No matches yet</h3>
           <p className="mt-2 max-w-xs text-sm text-ink-muted">
             Completed matches from every session in your community show up here.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {entries.map((h) => (
-            <div
-              key={h.matchId}
-              className="glass-strong grid grid-cols-[4px_1fr_auto] items-center gap-4 rounded-xl p-4"
-            >
-              <div
-                className={`h-11 w-1 rounded-full ${
-                  h.sessionType === "AMERICANO" ? "bg-lime" : "bg-accent-blue"
-                }`}
-              />
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-ink-muted">
-                    {h.sessionType}
+        <div className="flex flex-col gap-7">
+          {groups.map((g) => {
+            const d = new Date(g.date);
+            return (
+              <section key={g.key}>
+                <div className="mb-3 flex items-end gap-3">
+                  <span className="font-heading text-5xl font-black leading-none text-ink">
+                    {d.getDate()}
                   </span>
-                  <span className="text-xs text-ink-muted">
-                    {new Date(h.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}{" "}
-                    &middot; {h.court}
-                  </span>
-                  {h.title && (
-                    <span className="rounded-full bg-live-bg/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-live">
-                      {h.title}
-                    </span>
-                  )}
+                  <div className="min-w-0 pb-0.5">
+                    <div className="font-heading text-sm font-extrabold uppercase tracking-wider text-lime">
+                      {d.toLocaleDateString(undefined, { weekday: "short" })} &middot;{" "}
+                      {d.toLocaleDateString(undefined, { month: "short" })} &middot; {g.type}
+                    </div>
+                    <div className="truncate text-sm text-ink-muted">{g.session}</div>
+                  </div>
                 </div>
-                <div className="mt-1 truncate text-sm font-semibold text-ink">
-                  {h.team1[0]} &amp; {h.team1[1]}
+                <div className="flex flex-col gap-2">
+                  {g.items.map((h) => (
+                    <MatchRow key={h.matchId} h={h} i={rowIndex++} />
+                  ))}
                 </div>
-                <div className="mt-0.5 truncate text-sm text-ink-muted">
-                  vs {h.team2[0]} &amp; {h.team2[1]}
-                </div>
-              </div>
-              <div className="font-heading text-xl font-bold tabular-nums text-ink">{h.score}</div>
-            </div>
-          ))}
+              </section>
+            );
+          })}
           {hasMore && (
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="neu-raised flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-ink-muted transition-colors disabled:opacity-60"
+              className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-outline py-4 font-heading text-base font-bold uppercase tracking-wider text-ink-muted disabled:opacity-60"
             >
               {loadingMore && <Spinner className="text-lg" />}
-              {loadingMore ? "Loading..." : "Load More"}
+              {loadingMore ? "Loading" : "Load more"}
             </button>
           )}
         </div>

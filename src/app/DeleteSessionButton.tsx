@@ -8,10 +8,14 @@ export function DeleteSessionButton({
   sessionId,
   name,
   onDeleted,
+  className,
+  children,
 }: {
   sessionId: string;
   name: string;
   onDeleted?: () => void;
+  className?: string;
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
@@ -38,9 +42,12 @@ export function DeleteSessionButton({
         onClick={openConfirm}
         disabled={deleting}
         aria-label="Delete session"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-live-bg/20 hover:text-live disabled:opacity-40"
+        className={
+          className ??
+          "flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-live-bg/20 hover:text-live disabled:opacity-40"
+        }
       >
-        <span className="material-symbols-outlined text-lg">delete</span>
+        {children ?? <span className="material-symbols-outlined text-lg">delete</span>}
       </button>
       <ConfirmModal
         open={confirming}

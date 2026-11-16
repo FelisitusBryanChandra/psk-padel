@@ -1,76 +1,80 @@
 @import "tailwindcss";
 
+/* Court Night: near-black court, one electric accent. Token names are kept
+   from the original petrol theme (lime/surface/ink...) so every component
+   picks up the new palette without class changes. */
 @theme {
-  --color-bg: #06222b;
-  --color-bg-2: #04161d;
-  --color-surface: #0c3340;
-  --color-surface-low: #082631;
-  --color-surface-high: #113c4b;
-  --color-surface-highest: #17495a;
+  --color-bg: #0b0d0c;
+  --color-bg-2: #070908;
+  --color-surface: #141715;
+  --color-surface-low: #101211;
+  --color-surface-high: #1b1f1c;
+  --color-surface-highest: #252a26;
 
-  --color-ink: #eefaff;
-  --color-ink-muted: #93bcc8;
-  --color-outline: rgba(255, 255, 255, 0.11);
+  --color-ink: #f2f5ef;
+  --color-ink-muted: #8d958c;
+  --color-outline: rgba(255, 255, 255, 0.09);
 
-  --color-lime: #2ff0bf;
-  --color-lime-dim: #5cf5cc;
-  --color-on-lime: #04231d;
+  --color-lime: #d4ff3a;
+  --color-lime-dim: #e2ff7a;
+  --color-on-lime: #0b0d0c;
 
-  --color-live: #ff7a6b;
-  --color-live-bg: #5c1f1b;
+  --color-live: #ff5a3c;
+  --color-live-bg: #3d140c;
 
   --color-gold: #ffd75e;
-  --color-silver: #cbd9de;
+  --color-silver: #cbd3cd;
   --color-bronze: #e29a5a;
 
-  --color-accent-blue: #5cf2e0;
-  --color-accent-orange: #ffcc5c;
+  --color-accent-blue: #c7cec6;
+  --color-accent-orange: #ffb547;
 
   --font-heading: var(--font-heading), sans-serif;
   --font-body: var(--font-body), sans-serif;
 
-  --shadow-neu-dark: rgba(2, 14, 18, 0.62);
-  --shadow-neu-light: rgba(255, 255, 255, 0.07);
+  --shadow-neu-dark: rgba(0, 0, 0, 0.5);
+  --shadow-neu-light: rgba(255, 255, 255, 0.04);
 
-  --color-glow-a: rgba(0, 196, 196, 0.24);
-  --color-glow-b: rgba(120, 255, 180, 0.14);
-  --color-glow-c: rgba(0, 140, 255, 0.13);
+  --color-glow-a: rgba(212, 255, 58, 0.07);
 
   --color-flame-ink: #ffb057;
   --color-flame-fill-a: rgba(255, 90, 20, 0.24);
   --color-flame-fill-b: rgba(255, 190, 60, 0.16);
   --color-flame-line: rgba(255, 150, 60, 0.45);
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Light mode overrides the same tokens the dark @theme block defines above;
-   toggling the `light` class on <html> is all ThemeToggle needs to do. */
+/* Light mode: daylight court. The accent can't be read as text on white, so
+   light mode inverts it -- black "accent" surfaces carrying the neon as their
+   text color (--color-on-lime). */
 .light {
-  --color-bg: #cfe3e4;
-  --color-bg-2: #bad4d6;
-  --color-surface: #f6fcfc;
-  --color-surface-low: #e7f2f3;
-  --color-surface-high: #e7f2f3;
-  --color-surface-highest: #d8e9ea;
+  --color-bg: #eef0e8;
+  --color-bg-2: #e3e6dc;
+  --color-surface: #ffffff;
+  --color-surface-low: #f6f7f2;
+  --color-surface-high: #eceee6;
+  --color-surface-highest: #e0e3d8;
 
-  --color-ink: #08262e;
-  --color-ink-muted: #40606a;
-  --color-outline: rgba(8, 40, 48, 0.12);
+  --color-ink: #0b0d0c;
+  --color-ink-muted: #59605a;
+  --color-outline: rgba(11, 13, 12, 0.11);
 
-  --color-lime: #22c9a2;
-  --color-lime-dim: #00655a;
-  --color-on-lime: #06231d;
+  --color-lime: #0b0d0c;
+  --color-lime-dim: #3f5c00;
+  --color-on-lime: #d4ff3a;
 
-  --color-live: #c22a1c;
+  --color-live: #d4321a;
+  --color-live-bg: #ffe1da;
 
-  --color-accent-blue: #00706a;
-  --color-accent-orange: #8f6200;
+  --color-accent-blue: #59605a;
+  --color-accent-orange: #8f5a00;
 
-  --shadow-neu-dark: rgba(8, 50, 60, 0.16);
-  --shadow-neu-light: rgba(255, 255, 255, 0.95);
+  --shadow-neu-dark: rgba(11, 13, 12, 0.1);
+  --shadow-neu-light: rgba(255, 255, 255, 0.9);
 
-  --color-glow-a: rgba(0, 168, 168, 0.3);
-  --color-glow-b: rgba(70, 210, 140, 0.2);
-  --color-glow-c: rgba(60, 150, 230, 0.18);
+  --color-glow-a: rgba(160, 210, 0, 0.16);
 
   --color-flame-ink: #8a3a05;
   --color-flame-fill-a: rgba(255, 120, 30, 0.34);
@@ -78,252 +82,92 @@
   --color-flame-line: rgba(196, 92, 10, 0.55);
 }
 
-/* Base color themes: swap the structural neutrals (bg/surface tiers, ink,
-   outline, neu-shadows) that everything else sits on top of -- deliberately
-   disjoint from the accent tokens below (lime/glow/flame), so a base and an
-   accent combine freely with no property ever set by both. "petrol" is the
-   original palette baked into @theme/.light above and needs no block here.
-   Same data-base attribute + .light-scoped pairing as data-accent, and the
-   same rule: a new base needs both a globals.css block AND a registry entry
-   in src/lib/theme.ts, not one alone. */
-[data-base="slate"] {
-  --color-bg: #14181d;
-  --color-bg-2: #0d1015;
-  --color-surface: #1c2128;
-  --color-surface-low: #171b21;
-  --color-surface-high: #262c35;
-  --color-surface-highest: #2f3540;
-  --color-ink: #eef1f5;
-  --color-ink-muted: #9aa4b2;
-  --color-outline: rgba(255, 255, 255, 0.1);
-  --shadow-neu-dark: rgba(2, 4, 8, 0.55);
-  --shadow-neu-light: rgba(255, 255, 255, 0.05);
+/* Accent themes: "volt" is the default baked in above. A new accent needs a
+   block here AND an entry in src/lib/theme.ts. */
+[data-accent="flame"] {
+  --color-lime: #ff7a1a;
+  --color-lime-dim: #ffa55c;
+  --color-on-lime: #120700;
+  --color-glow-a: rgba(255, 122, 26, 0.08);
 }
-.light[data-base="slate"] {
-  --color-bg: #e3e6ea;
-  --color-bg-2: #d3d8de;
-  --color-surface: #f8f9fb;
-  --color-surface-low: #ebedf1;
-  --color-surface-high: #ebedf1;
-  --color-surface-highest: #dde1e6;
-  --color-ink: #12161c;
-  --color-ink-muted: #4a5560;
-  --color-outline: rgba(10, 14, 20, 0.12);
-  --shadow-neu-dark: rgba(20, 30, 40, 0.14);
-  --shadow-neu-light: rgba(255, 255, 255, 0.9);
+.light[data-accent="flame"] {
+  --color-lime: #0b0d0c;
+  --color-lime-dim: #a34500;
+  --color-on-lime: #ff8a2e;
+  --color-glow-a: rgba(255, 122, 26, 0.16);
 }
 
-[data-base="charcoal"] {
-  --color-bg: #1a1614;
-  --color-bg-2: #110d0c;
-  --color-surface: #241e1b;
-  --color-surface-low: #1d1815;
-  --color-surface-high: #2e2622;
-  --color-surface-highest: #382e29;
-  --color-ink: #f5efe8;
-  --color-ink-muted: #b8a99a;
-  --color-outline: rgba(255, 255, 255, 0.1);
-  --shadow-neu-dark: rgba(5, 3, 2, 0.55);
-  --shadow-neu-light: rgba(255, 255, 255, 0.05);
+[data-accent="ice"] {
+  --color-lime: #3af0ff;
+  --color-lime-dim: #8af6ff;
+  --color-on-lime: #001518;
+  --color-glow-a: rgba(58, 240, 255, 0.07);
 }
-.light[data-base="charcoal"] {
-  --color-bg: #ece3d8;
-  --color-bg-2: #ddd0c0;
-  --color-surface: #faf6f0;
-  --color-surface-low: #f1e9df;
-  --color-surface-high: #f1e9df;
-  --color-surface-highest: #e5d9c9;
-  --color-ink: #241a10;
-  --color-ink-muted: #6b5b47;
-  --color-outline: rgba(30, 20, 10, 0.12);
-  --shadow-neu-dark: rgba(40, 30, 20, 0.16);
-  --shadow-neu-light: rgba(255, 255, 255, 0.9);
-}
-
-/* Accent color themes: swap the brand tokens (--color-lime/-dim/-on-lime,
-   used everywhere via bg-lime/text-lime/text-on-lime) and the ambient glow
-   tokens WaveBackground reads, without touching structural tokens (surface/
-   ink/outline) or the unrelated semantic --color-live ("this match is
-   live"). "mint" is the original palette baked into @theme/.light above, so
-   it needs no override block here -- ThemeSettings just never sets
-   data-accent for it. Each other accent gets one dark block and one
-   .light-scoped block, keyed off the same data-accent attribute so accent
-   and light/dark combine freely (e.g. .light[data-accent="ocean"]).
-   Extending the palette registry (src/lib/theme.ts) with a new "id" here is
-   required, not just adding CSS on its own — the JS side has no color
-   values, only the swatch dot's own inline color. */
-[data-accent="ocean"] {
-  --color-lime: #4fb4ff;
-  --color-lime-dim: #8fd0ff;
-  --color-on-lime: #04202f;
-  --color-glow-a: rgba(0, 120, 220, 0.24);
-  --color-glow-b: rgba(80, 180, 255, 0.14);
-  --color-glow-c: rgba(120, 80, 255, 0.13);
-}
-.light[data-accent="ocean"] {
-  --color-lime: #0077c2;
-  --color-lime-dim: #004a78;
-  --color-on-lime: #f2fbff;
-  --color-glow-a: rgba(0, 110, 200, 0.3);
-  --color-glow-b: rgba(60, 150, 220, 0.2);
-  --color-glow-c: rgba(90, 90, 220, 0.18);
-}
-
-[data-accent="violet"] {
-  --color-lime: #b58cff;
-  --color-lime-dim: #d6bfff;
-  --color-on-lime: #1c0a33;
-  --color-glow-a: rgba(140, 60, 220, 0.24);
-  --color-glow-b: rgba(190, 120, 255, 0.14);
-  --color-glow-c: rgba(255, 80, 180, 0.13);
-}
-.light[data-accent="violet"] {
-  --color-lime: #7c3fe0;
-  --color-lime-dim: #4a1f8f;
-  --color-on-lime: #fbf5ff;
-  --color-glow-a: rgba(110, 40, 190, 0.3);
-  --color-glow-b: rgba(150, 90, 220, 0.2);
-  --color-glow-c: rgba(210, 60, 150, 0.18);
-}
-
-[data-accent="amber"] {
-  --color-lime: #ffb347;
-  --color-lime-dim: #ffd08a;
-  --color-on-lime: #2b1600;
-  --color-glow-a: rgba(220, 140, 0, 0.24);
-  --color-glow-b: rgba(255, 190, 60, 0.14);
-  --color-glow-c: rgba(255, 90, 20, 0.13);
-}
-.light[data-accent="amber"] {
-  --color-lime: #b9720a;
-  --color-lime-dim: #7a4b00;
-  --color-on-lime: #fff8ec;
-  --color-glow-a: rgba(190, 120, 0, 0.3);
-  --color-glow-b: rgba(220, 160, 40, 0.2);
-  --color-glow-c: rgba(220, 90, 20, 0.18);
-}
-
-[data-accent="rose"] {
-  --color-lime: #ff6fa5;
-  --color-lime-dim: #ffa8c6;
-  --color-on-lime: #2b0716;
-  --color-glow-a: rgba(220, 0, 90, 0.24);
-  --color-glow-b: rgba(255, 120, 170, 0.14);
-  --color-glow-c: rgba(255, 60, 60, 0.13);
-}
-.light[data-accent="rose"] {
-  --color-lime: #c81760;
-  --color-lime-dim: #8a0e40;
-  --color-on-lime: #fff0f5;
-  --color-glow-a: rgba(190, 0, 80, 0.3);
-  --color-glow-b: rgba(220, 90, 140, 0.2);
-  --color-glow-c: rgba(210, 60, 60, 0.18);
+.light[data-accent="ice"] {
+  --color-lime: #0b0d0c;
+  --color-lime-dim: #006b75;
+  --color-on-lime: #3af0ff;
+  --color-glow-a: rgba(0, 190, 210, 0.14);
 }
 
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
-/* Glassmorphism: translucent, blurred surfaces for panels that float over
-   page content (modals, sticky headers, cards). Built from the existing
-   surface/ink tokens via color-mix so it tracks the light/dark theme
-   automatically instead of needing its own overrides. The saturate() boost
-   makes whatever's blurred behind the panel read as "frosted" rather than
-   just dimmed; the drop shadow + inset top sheen are what sell it as a
-   pane floating above the page instead of a flat panel — reusing the same
-   --shadow-neu-* tokens as the neumorphic surfaces so both styles still
-   feel like one lighting system. */
+/* Surfaces. The old glass/neumorphic classes are kept by name (used across
+   ~25 components) but now render as flat, crisp Court Night panels. */
 .glass {
-  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
-  backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
-  box-shadow:
-    0 2px 6px -2px var(--shadow-neu-dark),
-    0 16px 36px -8px var(--shadow-neu-dark),
-    inset 0 1px 0 var(--shadow-neu-light);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
 }
 .glass-strong {
-  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  backdrop-filter: blur(28px) saturate(1.4);
-  border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
-  box-shadow:
-    0 4px 10px -2px var(--shadow-neu-dark),
-    0 24px 56px -12px var(--shadow-neu-dark),
-    inset 0 1px 0 var(--shadow-neu-light);
+  background: var(--color-surface-high);
+  border: 1px solid var(--color-outline);
 }
-
-/* .glass's shadow recipe (a tight contact shadow plus a big soft ambient
-   layer) is built for a floating card, not a full-width sticky bar — the
-   ambient layer bleeds out along the whole width and reads as a heavy
-   rectangular smear on a header. Pair `glass glass-header` on any sticky
-   top bar to keep the tint/blur/border but drop just the ambient layer. */
 .glass-header {
-  box-shadow:
-    0 2px 8px -2px var(--shadow-neu-dark),
-    inset 0 1px 0 var(--shadow-neu-light);
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-width: 0 0 1px 0;
 }
-
-/* Pair with `glass-strong` on BottomNav's floating pill for an actual
-   "liquid glass" read instead of a plain frosted panel: lets more of
-   whatever's behind it show through (lower background opacity, heavier
-   blur/saturate/brightness so that color reads vivid rather than muddy),
-   plus a brighter edge ring and a stronger top-band highlight than
-   glass-strong's bare 1px sheen. Redeclares (rather than supplements)
-   glass-strong's background/backdrop-filter/border/box-shadow, since none
-   of those merge across rules -- this must restate glass-strong's own
-   dark-shadow layers, not just add to them. Pairs with the specular
-   gradient overlay rendered as the pill's first child in BottomNav. */
 .nav-pill {
-  background: color-mix(in srgb, var(--color-surface) 50%, transparent);
-  backdrop-filter: blur(32px) saturate(2.2) brightness(1.15);
-  border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
-  box-shadow:
-    0 4px 10px -2px var(--shadow-neu-dark),
-    0 24px 56px -12px var(--shadow-neu-dark),
-    inset 0 1px 0 var(--shadow-neu-light),
-    inset 0 20px 24px -14px var(--shadow-neu-light);
+  background: var(--color-surface-high);
+  border: 1px solid var(--color-outline);
+  box-shadow: 0 12px 32px -12px var(--shadow-neu-dark);
 }
 
-/* Neumorphism: soft dual-shadow relief for small tactile controls sitting
-   flush on a surface (toggles, steppers, pressable buttons). --shadow-neu-*
-   are themed in the @theme / .light blocks above. */
 .neu-raised {
-  background: var(--color-surface);
-  box-shadow:
-    5px 5px 12px var(--shadow-neu-dark),
-    -5px -5px 12px var(--shadow-neu-light);
+  background: var(--color-surface-high);
+  border: 1px solid var(--color-outline);
 }
 .neu-inset {
-  background: var(--color-surface);
-  box-shadow:
-    inset 4px 4px 9px var(--shadow-neu-dark),
-    inset -4px -4px 9px var(--shadow-neu-light);
+  background: var(--color-surface-low);
+  border: 1px solid var(--color-outline);
 }
 .neu-inset-sm {
-  background: var(--color-surface);
-  box-shadow:
-    inset 2px 2px 5px var(--shadow-neu-dark),
-    inset -2px -2px 5px var(--shadow-neu-light);
+  background: var(--color-surface-low);
+  border: 1px solid var(--color-outline);
 }
 
-/* Two-state slide switch (adapted from https://uiverse.io/mobinkakei/great-skunk-8,
-   MIT-licensed) — retextured with --shadow-neu-* / lime instead of the
-   original's hardcoded light-only colors. The indicator is 200% of the
-   track width and slides between -75%/25%; only half is ever visible
-   (clipped by overflow:hidden), which is what gives the moving fill
-   rounded ends matching the track instead of a knob with visible seams. */
+/* Press feedback for anything tappable: a quick spring squash. */
+.pressable {
+  transition: transform 220ms var(--ease-spring);
+}
+.pressable:active {
+  transform: scale(0.94);
+}
+
+/* Two-state slide switch. The indicator is 200% of the track and slides
+   between -75%/25%, so only its rounded half is ever visible. */
 .sort-toggle {
   isolation: isolate;
   position: relative;
   display: inline-block;
-  height: 22px;
-  width: 44px;
-  border-radius: 11px;
+  height: 24px;
+  width: 46px;
+  border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow:
-    inset 2px 2px 5px var(--shadow-neu-dark),
-    inset -2px -2px 5px var(--shadow-neu-light);
+  background: var(--color-surface-highest);
 }
 .sort-toggle-input {
   display: none;
@@ -333,87 +177,114 @@
   height: 100%;
   width: 200%;
   background: var(--color-lime);
-  border-radius: 11px;
+  border-radius: 12px;
   transform: translate3d(-75%, 0, 0);
-  transition: transform 0.4s cubic-bezier(0.85, 0.05, 0.18, 1.35);
+  transition: transform 0.45s var(--ease-spring);
 }
 .sort-toggle-input:checked ~ .sort-toggle-indicator {
   transform: translate3d(25%, 0, 0);
 }
-
-/* Opt-in variant for a plain on/off toggle (as opposed to a two-named-state
-   picker like the sort-order switch above, which already carries its state
-   via the flanking label text) — the indicator itself needs to carry the
-   on/off meaning since there's no label pair around it to do that instead. */
 .sort-toggle-stateful .sort-toggle-indicator {
-  background: var(--color-outline);
+  background: var(--color-ink-muted);
   transition:
-    transform 0.4s cubic-bezier(0.85, 0.05, 0.18, 1.35),
+    transform 0.45s var(--ease-spring),
     background-color 0.3s ease;
 }
 .sort-toggle-stateful .sort-toggle-input:checked ~ .sort-toggle-indicator {
   background: var(--color-lime);
 }
 
-/* Pill button with a shimmering border and a springy hover scale (adapted
-   from https://uiverse.io/LilaRest/loud-walrus-26, MIT-licensed) —
-   retextured with lime/surface color-mix instead of the original's
-   hardcoded pink, so it tracks the light/dark theme automatically. */
+/* Primary "big action" button: solid accent with a light sweep. */
 .shimmer-btn {
+  position: relative;
+  overflow: hidden;
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 999px;
-  border: 3px solid color-mix(in srgb, var(--color-lime) 25%, var(--color-surface));
-  background: var(--color-surface);
-  padding: 12px 20px;
-  box-shadow: inset 0 -2px 6px 0 var(--shadow-neu-dark);
-  color: var(--color-ink-muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  border-radius: 16px;
+  background: var(--color-lime);
+  padding: 15px 20px;
+  color: var(--color-on-lime);
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
-  transition:
-    transform 400ms cubic-bezier(0.68, -0.55, 0.27, 2.5),
-    border-color 400ms ease-in-out,
-    background-color 400ms ease-in-out,
-    color 200ms ease-in-out;
+  transition: transform 260ms var(--ease-spring);
 }
-.shimmer-btn:hover:not(:disabled) {
-  transform: scale(1.02);
-  background: color-mix(in srgb, var(--color-lime) 8%, var(--color-surface));
-  color: var(--color-ink);
-  animation: shimmer-border 3s infinite;
+.shimmer-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: btn-sweep 3.2s var(--ease-out-expo) infinite;
+  pointer-events: none;
 }
 .shimmer-btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.96);
 }
 .shimmer-btn:disabled {
   cursor: default;
-  opacity: 0.4;
+  background: var(--color-surface-highest);
+  color: var(--color-ink-muted);
 }
-@keyframes shimmer-border {
+.shimmer-btn:disabled::after {
+  display: none;
+}
+
+/* Same light sweep, as a standalone layer for accent cards (live ticket). */
+.card-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.4) 50%, transparent 62%);
+  transform: translateX(-120%);
+  animation: btn-sweep 4s var(--ease-out-expo) infinite;
+  pointer-events: none;
+}
+@keyframes btn-sweep {
   0%,
-  90% {
-    border-color: color-mix(in srgb, var(--color-lime) 25%, var(--color-surface));
+  55% {
+    transform: translateX(-120%);
   }
-  50% {
-    border-color: color-mix(in srgb, var(--color-lime) 55%, var(--color-surface));
+  100% {
+    transform: translateX(120%);
   }
 }
 
-/* Win-streak indicator on a Standings row (design handoff: PSK Padel
-   Petrol.dc.html — colors/keyframes below are taken directly from that
-   spec, not improvised). Applied to the real <tr> (not a synthetic
-   wrapper — an earlier version restyled the row as a standalone CSS grid
-   to match the mockup's div-based technique, but that meant its column
-   widths didn't track the rest of the table, so a long fixed-partner name
-   wrapped and collided with the badge/W-T-L columns on narrow screens).
-   .streak-row tints the row and pulses via flame-breathe; .streak-badge/
-   .streak-flame are the small "N in a row" pill next to the player's name. */
+/* Live dot: a pulse ring radiating out of a solid dot. */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  height: 7px;
+  width: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: currentColor;
+  animation: live-ping 1.6s var(--ease-out-expo) infinite;
+}
+@keyframes live-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* Win-streak indicator on a Standings row. */
 @keyframes flame-breathe {
   0%,
   100% {
@@ -467,17 +338,7 @@
   transform-origin: 50% 100%;
   animation: flame-lick 900ms ease-in-out infinite;
 }
-@media (prefers-reduced-motion: reduce) {
-  .streak-row {
-    animation: none;
-  }
-  .streak-flame {
-    animation: none;
-  }
-}
 
-/* For horizontally-scrolling strips (e.g. the player chip row) where the
-   scrollbar is just visual noise, not a primary content list. */
 .no-scrollbar {
   scrollbar-width: none;
 }
@@ -508,7 +369,7 @@
   }
 }
 .loading-modal-entrance {
-  animation: loading-modal-entrance 0.4s ease-out;
+  animation: loading-modal-entrance 0.4s var(--ease-out-expo);
 }
 
 @keyframes loading-ring-spin {
@@ -542,22 +403,67 @@
   animation: loading-progress-indeterminate 1.5s ease-in-out infinite;
 }
 
+/* Page entrance, plus a staggered rise for direct children of .stagger. */
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(10px) scale(0.99);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 .page-enter {
-  animation: page-enter 160ms ease-out;
+  animation: page-enter 380ms var(--ease-out-expo);
 }
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.stagger > * {
+  animation: rise-in 560ms var(--ease-out-expo) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+.stagger > *:nth-child(6) { animation-delay: 300ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 340ms; }
+
+/* Rolling digits (RollingNumber.tsx): each column is a 0-9 strip slid with
+   a spring. Sized in em so it follows the parent's font-size. */
+.roll {
+  display: inline-flex;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+.roll-col {
+  display: flex;
+  flex-direction: column;
+  transition: transform 560ms var(--ease-spring);
+}
+.roll-col > span {
+  height: 1em;
+  line-height: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .page-enter {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
   }
 }
 

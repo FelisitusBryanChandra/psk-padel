@@ -19,7 +19,7 @@ export function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={loading}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-live-bg/20 font-heading text-base font-black text-live transition-transform active:scale-95 disabled:opacity-40"
+      className="pressable flex h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 border-live/40 font-heading text-lg font-extrabold uppercase tracking-wide text-live disabled:opacity-40"
     >
       {loading ? (
         <Spinner className="text-xl" />
