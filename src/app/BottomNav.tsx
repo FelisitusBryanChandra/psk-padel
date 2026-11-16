@@ -78,7 +78,7 @@ function Ball() {
         navigator.vibrate?.(10);
         setTimeout(() => router.push("/session/start"), 220);
       }}
-      className="absolute left-1/2 z-10 flex items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_6px_18px_-6px_var(--color-lime)]"
+      className="absolute left-1/2 z-10 flex items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_8px_20px_-4px_rgba(0,0,0,0.6)] ring-[5px] ring-bg"
       style={{ width: BALL, height: BALL, marginLeft: -BALL / 2, top: -BALL / 2 }}
       animate={{ rotate: turns * 360 }}
       whileTap={{ scale: 0.9 }}
