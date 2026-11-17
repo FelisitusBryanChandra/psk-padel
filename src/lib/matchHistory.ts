@@ -5,6 +5,9 @@ import { computeMatchTitle, type MatchTitle } from "@/lib/matchTitle";
 
 export type MatchHistoryEntry = {
   matchId: string;
+  sessionId: string;
+  // True once every match in the session is completed.
+  sessionDone: boolean;
   date: string;
   court: string;
   sessionName: string;
@@ -71,6 +74,16 @@ export async function computeMatchHistory(
   const hasMore = matches.length > limit;
   const page = matches.slice(0, limit);
 
+  const sessionIds = [...new Set(page.map((m) => m.round.sessionId))];
+  const unfinished = new Set(
+    (
+      await prisma.round.findMany({
+        where: { sessionId: { in: sessionIds }, matches: { some: { completed: false } } },
+        select: { sessionId: true },
+      })
+    ).map((r) => r.sessionId)
+  );
+
   const entries: MatchHistoryEntry[] = page.map((m) => {
     const session = m.round.session;
     const [team1Total, team2Total] =
@@ -78,6 +91,8 @@ export async function computeMatchHistory(
     const target = session.scoringMode === "SET" ? session.gamesPerSet : session.pointsPerMatch;
     return {
       matchId: m.id,
+      sessionId: session.id,
+      sessionDone: !unfinished.has(session.id),
       date: session.date.toISOString(),
       court: courtLabel(session, m.courtNumber),
       sessionName: session.name,

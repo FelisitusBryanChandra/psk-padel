@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { PageHero, Segmented } from "@/app/PageHero";
 import { Spinner } from "@/app/Spinner";
+import { PlayedStamp, TornTicket } from "@/app/TornTicket";
 import type { MatchHistoryEntry } from "@/lib/matchHistory";
 
 const FILTERS = ["All", "Americano", "Mexicano"] as const;
@@ -122,12 +123,20 @@ export default function HistoryPage() {
 
   // Group consecutive matches by day + session so each block reads like a
   // results page for that night.
-  const groups: { key: string; date: string; session: string; type: string; items: MatchHistoryEntry[] }[] = [];
+  const groups: {
+    key: string;
+    date: string;
+    session: string;
+    type: string;
+    done: boolean;
+    items: MatchHistoryEntry[];
+  }[] = [];
   for (const h of entries ?? []) {
-    const key = `${h.date.slice(0, 10)}|${h.sessionName}`;
+    const key = h.sessionId;
     const last = groups.at(-1);
     if (last && last.key === key) last.items.push(h);
-    else groups.push({ key, date: h.date, session: h.sessionName, type: h.sessionType, items: [h] });
+    else
+      groups.push({ key, date: h.date, session: h.sessionName, type: h.sessionType, done: h.sessionDone, items: [h] });
   }
 
   let rowIndex = 0;
@@ -168,18 +177,50 @@ export default function HistoryPage() {
             const d = new Date(g.date);
             return (
               <section key={g.key}>
-                <div className="mb-3 flex items-end gap-3">
-                  <span className="font-heading text-5xl font-black leading-none text-ink">
-                    {d.getDate()}
-                  </span>
-                  <div className="min-w-0 pb-0.5">
-                    <div className="font-heading text-sm font-extrabold uppercase tracking-wider text-lime">
-                      {d.toLocaleDateString(undefined, { weekday: "short" })} &middot;{" "}
-                      {d.toLocaleDateString(undefined, { month: "short" })} &middot; {g.type}
-                    </div>
-                    <div className="truncate text-sm text-ink-muted">{g.session}</div>
+                {g.done ? (
+                  <div className="mb-3">
+                    <TornTicket
+                      radius={18}
+                      stubWidth={68}
+                      bodyClassName="bg-surface-high px-4 py-3 pr-6"
+                      stubClassName="flex flex-col items-center justify-center bg-lime pr-1 text-on-lime"
+                      body={
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-heading text-sm font-extrabold uppercase tracking-wider text-lime">
+                              {d.toLocaleDateString(undefined, { weekday: "short" })} &middot; {g.type}
+                            </span>
+                            <PlayedStamp />
+                          </div>
+                          <p className="mt-1 truncate font-heading text-2xl font-black uppercase italic leading-none text-ink">
+                            {g.session}
+                          </p>
+                        </>
+                      }
+                      stub={
+                        <>
+                          <span className="font-heading text-4xl font-black leading-none">{d.getDate()}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {d.toLocaleDateString(undefined, { month: "short" })}
+                          </span>
+                        </>
+                      }
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="mb-3 flex items-end gap-3">
+                    <span className="font-heading text-5xl font-black leading-none text-ink">
+                      {d.getDate()}
+                    </span>
+                    <div className="min-w-0 pb-0.5">
+                      <div className="font-heading text-sm font-extrabold uppercase tracking-wider text-lime">
+                        {d.toLocaleDateString(undefined, { weekday: "short" })} &middot;{" "}
+                        {d.toLocaleDateString(undefined, { month: "short" })} &middot; {g.type}
+                      </div>
+                      <div className="truncate text-sm text-ink-muted">{g.session}</div>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-2">
                   {g.items.map((h) => (
                     <MatchRow key={h.matchId} h={h} i={rowIndex++} />

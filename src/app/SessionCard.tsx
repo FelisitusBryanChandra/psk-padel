@@ -8,6 +8,7 @@ import { Avatar } from "./Avatar";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { RollingNumber } from "./RollingNumber";
 import { Tilt } from "./Tilt";
+import { PlayedStamp, TornTicket } from "./TornTicket";
 
 export type SessionListItem = {
   id: string;
@@ -29,10 +30,6 @@ export type SessionListItem = {
 };
 
 const REVEAL = 96;
-
-function initials(name: string) {
-  return name.trim().slice(0, 2).toUpperCase();
-}
 
 // Wraps a card so it can be swiped left to reveal Delete. A drag never
 // counts as a tap, so swiping doesn't also open the session.
@@ -239,67 +236,64 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
 }
 
 function ResultPoster({ s, showCommunity }: { s: SessionListItem; showCommunity: boolean }) {
-  const [first, second, third] = s.top;
+  const first = s.top[0];
   const date = new Date(s.date).toLocaleDateString(undefined, {
     weekday: "short",
     day: "numeric",
     month: "short",
   });
-  const podium = [
-    { row: second, h: "62%", place: 2 },
-    { row: first, h: "100%", place: 1 },
-    { row: third, h: "42%", place: 3 },
-  ];
+  const labels = initialsFor(s.playerNames);
 
   return (
-    <div className="rounded-[24px] border border-outline bg-surface p-4">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">{date}</span>
-        <Tags s={s} showCommunity={showCommunity} />
-      </div>
-      <div className="mt-2 flex items-end gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-lg font-extrabold uppercase text-ink-muted">{s.name}</p>
+    <TornTicket
+      bodyClassName="border border-outline bg-surface p-4 pr-6"
+      stubClassName="flex flex-col items-center justify-between bg-lime py-3 pr-1.5 text-on-lime"
+      body={
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+              {date} &middot; Final
+            </span>
+            <PlayedStamp />
+          </div>
+          <p className="mt-2 truncate font-heading text-3xl font-black uppercase italic leading-[0.95] text-ink">
+            {s.name}
+          </p>
           {first ? (
-            <>
-              <p className="mt-0.5 line-clamp-2 font-heading text-4xl font-black uppercase italic leading-[0.9] text-lime">
-                {first.name}
-                <br />
-                wins
-              </p>
-              <p className="mt-2 text-xs text-ink-muted">
-                {first.score} pts &middot; {first.wins}W {first.losses}L &middot; {s.playerCount} players
-              </p>
-            </>
+            <div className="mt-3 flex items-center gap-3">
+              <Avatar name={first.name} size={40} ring="#f7cf4f" badge={labels.get(first.name)} />
+              <div className="min-w-0">
+                <p className="truncate font-heading text-xl font-black uppercase leading-none text-lime">
+                  {first.name} wins
+                </p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  {first.score} pts &middot; {first.wins}W {first.losses}L &middot; {s.playerCount} players
+                </p>
+              </div>
+            </div>
           ) : (
-            <p className="mt-1 text-sm text-ink-muted">
-              Final &middot; {s.playerCount} players &middot; {s.roundCount} rounds
+            <p className="mt-2 text-sm text-ink-muted">
+              {s.playerCount} players &middot; {s.roundCount} rounds
             </p>
           )}
-        </div>
-        {first && (
-          <div className="flex h-16 w-28 shrink-0 items-end gap-1">
-            {podium.map(({ row, h, place }) =>
-              row ? (
-                <motion.div
-                  key={place}
-                  className={`flex flex-1 items-start justify-center rounded-t-lg pt-1 font-heading text-sm font-extrabold ${
-                    place === 1 ? "bg-lime text-on-lime" : "bg-surface-highest text-ink"
-                  }`}
-                  initial={{ height: 0 }}
-                  animate={{ height: h }}
-                  transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.1 * place }}
-                >
-                  {initials(row.name)}
-                </motion.div>
-              ) : (
-                <div key={place} className="flex-1" />
-              )
-            )}
+          <div className="mt-3">
+            <Tags s={s} showCommunity={showCommunity} />
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      }
+      stub={
+        <>
+          <span className="h-3 w-3 rounded-full bg-bg" />
+          <div className="text-center">
+            <p className="font-heading text-3xl font-black leading-none">{s.matchesDone}</p>
+            <span className="text-[9px] font-bold uppercase tracking-wider">
+              {s.matchesDone === 1 ? "Match" : "Matches"}
+            </span>
+          </div>
+          <span className="font-heading text-sm font-black">PSK</span>
+        </>
+      }
+    />
   );
 }
 

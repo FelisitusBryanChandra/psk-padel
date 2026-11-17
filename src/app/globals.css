@@ -662,7 +662,18 @@
   -webkit-mask: radial-gradient(circle 150px at var(--mx, -999px) var(--my, -999px), #000, transparent);
 }
 
+/* Torn ticket stub: hover peels it a little further (composes with motion's transform). */
+.tt-stub {
+  transition:
+    translate 450ms var(--ease-spring),
+    rotate 450ms var(--ease-spring);
+}
+
 @media (hover: hover) and (pointer: fine) {
+  .torn-ticket:hover .tt-stub {
+    translate: 4px 3px;
+    rotate: 3deg;
+  }
   .court-lights.on {
     opacity: 1;
   }
