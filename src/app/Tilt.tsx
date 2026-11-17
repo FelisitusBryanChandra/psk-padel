@@ -9,10 +9,12 @@ export function Tilt({
   children,
   className = "",
   max = 7,
+  lift = true,
 }: {
   children: React.ReactNode;
   className?: string;
   max?: number;
+  lift?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,7 +30,7 @@ export function Tilt({
     el.style.transform = `perspective(900px) rotateX(${((0.5 - py) * max).toFixed(2)}deg) rotateY(${(
       (px - 0.5) *
       max
-    ).toFixed(2)}deg) translateY(-3px)`;
+    ).toFixed(2)}deg)${lift ? " translateY(-3px)" : ""}`;
     el.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
     el.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
   }

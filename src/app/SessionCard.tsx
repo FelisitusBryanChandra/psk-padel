@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { animate, motion, useMotionValue } from "motion/react";
+import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { RollingNumber } from "./RollingNumber";
 import { Tilt } from "./Tilt";
@@ -44,6 +44,9 @@ export function SessionCard({
   onDeleted: () => void;
 }) {
   const x = useMotionValue(0);
+  // The red Delete panel only shows once the card is actually swiped, so a
+  // hover tilt can never flash it at the card's edges.
+  const deleteOpacity = useTransform(x, [-24, -4], [1, 0]);
   const dragged = useRef(false);
   const [open, setOpen] = useState(false);
 
@@ -63,7 +66,10 @@ export function SessionCard({
 
   return (
     <div className="relative overflow-hidden rounded-[24px]">
-      <div className="absolute inset-y-0 right-0 flex w-full items-stretch justify-end rounded-[24px] bg-live">
+      <motion.div
+        style={{ opacity: deleteOpacity }}
+        className="absolute inset-y-0 right-0 flex w-full items-stretch justify-end rounded-[24px] bg-live"
+      >
         <DeleteSessionButton
           sessionId={session.id}
           name={session.name}
@@ -73,7 +79,7 @@ export function SessionCard({
           <span className="material-symbols-outlined">delete</span>
           Delete
         </DeleteSessionButton>
-      </div>
+      </motion.div>
       <motion.div
         style={{ x, touchAction: "pan-y" }}
         drag="x"
@@ -96,7 +102,9 @@ export function SessionCard({
         className="relative"
       >
         <Link href={`/session/${session.id}`} className="block" draggable={false}>
-          <Tilt className="rounded-[24px]">{card}</Tilt>
+          <Tilt className="rounded-[24px]" max={4} lift={false}>
+            {card}
+          </Tilt>
         </Link>
       </motion.div>
     </div>
