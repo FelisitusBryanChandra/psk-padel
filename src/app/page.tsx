@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HomeHero } from "./HomeHero";
+import { Reveal } from "./Reveal";
 import { SessionCard, type SessionListItem } from "./SessionCard";
 
 function HomeSkeleton() {
@@ -171,14 +172,11 @@ export default function HomePage() {
             </a>
           </div>
 
-          <div className="stagger flex flex-col gap-4">
-            {monthSessions.map((s) => (
-              <SessionCard
-                key={s.id}
-                session={s}
-                showCommunity={isAdmin}
-                onDeleted={refresh}
-              />
+          <div className="flex flex-col gap-4">
+            {monthSessions.map((s, i) => (
+              <Reveal key={s.id} index={i}>
+                <SessionCard session={s} showCommunity={isAdmin} onDeleted={refresh} />
+              </Reveal>
             ))}
           </div>
         </section>

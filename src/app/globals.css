@@ -457,6 +457,90 @@
   line-height: 1;
 }
 
+/* Live surfaces: only things that are live move. .live-flow is a slowly
+   shifting accent gradient with a drifting light swirl (live tickets, the
+   live island); .live-ring sends a light around a card's border (live
+   court cards). Built from --color-lime so accents and light mode follow. */
+@property --ring-a {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.live-flow {
+  background-image: linear-gradient(
+    120deg,
+    var(--color-lime),
+    color-mix(in srgb, var(--color-lime) 78%, white) 28%,
+    var(--color-lime) 52%,
+    color-mix(in srgb, var(--color-lime) 86%, black) 78%,
+    var(--color-lime)
+  );
+  background-size: 300% 300%;
+  animation: live-flow 9s ease-in-out infinite;
+}
+.live-flow-swirl {
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 40%),
+    radial-gradient(circle at 75% 70%, color-mix(in srgb, var(--color-lime) 60%, black), transparent 45%);
+  mix-blend-mode: soft-light;
+  animation: live-drift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.live-flow > :not(.live-flow-swirl):not(.card-sweep) {
+  position: relative;
+}
+@keyframes live-flow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes live-drift {
+  from {
+    transform: translate(-8%, -6%) rotate(0deg);
+  }
+  to {
+    transform: translate(8%, 6%) rotate(25deg);
+  }
+}
+.live-ring {
+  position: relative;
+}
+.live-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--ring-a),
+    var(--color-lime),
+    transparent 28%,
+    transparent 62%,
+    var(--color-lime) 92%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  animation: ring-spin 4s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+@keyframes ring-spin {
+  to {
+    --ring-a: 360deg;
+  }
+}
+
 /* Hover system. Everything below only applies with a real mouse/trackpad,
    so touch devices never get stuck hover states. Effects use the
    individual translate/rotate/scale properties so they stack on top of the

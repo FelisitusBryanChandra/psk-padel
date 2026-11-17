@@ -125,6 +125,9 @@ export function StandingsTable({
             <motion.div
               layout
               key={r.playerId}
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.3 }}
               transition={SPRING}
               className={`row-hover overflow-hidden rounded-2xl bg-surface ${
                 r.winStreak >= 3 ? "streak-row" : ""

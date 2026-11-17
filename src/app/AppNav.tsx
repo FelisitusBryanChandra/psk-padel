@@ -224,8 +224,9 @@ function Dock({ pathname, courts }: { pathname: string; courts: LiveCourt[] }) {
             >
               <Link
                 href={`/session/${c.sessionId}/match/${c.matchId}`}
-                className="pressable flex items-center gap-2.5 whitespace-nowrap rounded-full bg-lime py-1.5 pl-3.5 pr-2 text-on-lime ring-4 ring-bg"
+                className="live-flow pressable relative flex items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-full bg-lime py-1.5 pl-3.5 pr-2 text-on-lime ring-4 ring-bg"
               >
+                <span aria-hidden="true" className="live-flow-swirl" />
                 <span className="live-dot text-live" />
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span
@@ -364,8 +365,9 @@ function Rail({ pathname, courts }: { pathname: string; courts: LiveCourt[] }) {
           >
             <Link
               href={`/session/${c.sessionId}/match/${c.matchId}`}
-              className="pressable flex flex-col items-center gap-1 rounded-2xl bg-lime px-1 py-3 text-on-lime"
+              className="live-flow pressable relative flex flex-col items-center gap-1 overflow-hidden rounded-2xl bg-lime px-1 py-3 text-on-lime"
             >
+              <span aria-hidden="true" className="live-flow-swirl" />
               <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase">
                 <span className="live-dot text-live" />
                 Live

@@ -128,7 +128,8 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
   const extra = s.playerNames.length - shownNames.length;
 
   return (
-    <div className="relative flex overflow-hidden rounded-[24px] bg-lime text-on-lime">
+    <div className="live-flow relative flex overflow-hidden rounded-[24px] bg-lime text-on-lime">
+      <span aria-hidden="true" className="live-flow-swirl" />
       <span aria-hidden="true" className="card-sweep" />
       <div className="relative flex w-16 shrink-0 flex-col items-center justify-center border-r-2 border-dashed border-on-lime/30">
         <span aria-hidden="true" className="absolute -right-[9px] -top-2 h-4 w-4 rounded-full bg-bg" />

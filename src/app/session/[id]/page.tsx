@@ -1154,9 +1154,7 @@ function MatchCard({
 
   return (
     <div
-      className={`overflow-hidden rounded-3xl border transition-colors duration-500 ${
-        live ? "border-lime/60 bg-surface" : "border-outline bg-surface"
-      }`}
+      className={`overflow-hidden rounded-3xl border border-outline bg-surface ${live ? "live-ring" : ""}`}
     >
       <div className="flex items-center justify-between px-5 pt-4">
         <span className="font-heading text-2xl font-extrabold uppercase text-ink">
