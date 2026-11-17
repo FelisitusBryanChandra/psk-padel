@@ -457,6 +457,133 @@
   line-height: 1;
 }
 
+/* Hover system. Everything below only applies with a real mouse/trackpad,
+   so touch devices never get stuck hover states. Effects use the
+   individual translate/rotate/scale properties so they stack on top of the
+   transforms motion and .pressable already set, instead of fighting them. */
+.row-hover {
+  position: relative;
+}
+.row-hover::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 2px;
+  background: var(--color-lime);
+  translate: 0 -50%;
+  transition: height 350ms var(--ease-spring);
+  pointer-events: none;
+  z-index: 1;
+}
+.link-draw {
+  position: relative;
+}
+.link-draw::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-lime);
+  scale: 0 1;
+  transform-origin: right;
+  transition: scale 350ms var(--ease-out-expo);
+  pointer-events: none;
+}
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.45),
+    transparent 55%
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+  z-index: 5;
+}
+[data-magnetic] {
+  transition: translate 350ms var(--ease-out-expo);
+}
+.nudge {
+  transition: translate 350ms var(--ease-spring);
+}
+.hl-ch {
+  transition:
+    translate 500ms var(--ease-spring),
+    rotate 500ms var(--ease-spring),
+    color 300ms ease;
+  transition-delay: calc(var(--i, 0) * 28ms);
+}
+.court-lights {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 500ms ease;
+  background:
+    radial-gradient(circle 260px at var(--mx, -999px) var(--my, -999px), var(--color-glow-a), transparent 70%);
+}
+.court-lights::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-lime) 30%, transparent) 1px, transparent 1px) 0 0 / 100% 44px,
+    linear-gradient(90deg, color-mix(in srgb, var(--color-lime) 30%, transparent) 1px, transparent 1px) 0 0 / 44px 100%;
+  mask: radial-gradient(circle 150px at var(--mx, -999px) var(--my, -999px), #000, transparent);
+  -webkit-mask: radial-gradient(circle 150px at var(--mx, -999px) var(--my, -999px), #000, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .court-lights.on {
+    opacity: 1;
+  }
+  .pressable:hover {
+    translate: 0 -1px;
+    filter: brightness(1.1);
+  }
+  .row-hover {
+    transition:
+      translate 350ms var(--ease-spring),
+      background-color 250ms ease;
+  }
+  .row-hover:hover {
+    translate: 4px 0;
+  }
+  .row-hover:hover::before {
+    height: 56%;
+  }
+  .link-draw:hover::after {
+    scale: 1 1;
+    transform-origin: left;
+  }
+  [data-magnetic]:hover {
+    box-shadow: 0 14px 30px -12px var(--color-lime);
+  }
+  [data-magnetic]:hover .nudge,
+  .group:hover .nudge {
+    translate: 5px 0;
+  }
+  .tilt-wrap:hover .tilt-glare {
+    opacity: 1;
+  }
+  .hl-wave:hover .hl-ch {
+    translate: 0 -0.07em;
+    rotate: -4deg;
+    color: var(--color-lime);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

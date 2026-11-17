@@ -555,7 +555,7 @@ export default function NewSessionPage() {
 
         <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-bg via-bg/95 to-transparent pb-5 pt-10">
           <div className="mx-auto w-full max-w-md px-5 md:max-w-xl lg:max-w-2xl">
-            <button type="submit" disabled={loading} className="shimmer-btn py-4! text-xl!">
+            <button type="submit" disabled={loading} data-magnetic className="shimmer-btn py-4! text-xl!">
               {loading ? <Spinner className="text-xl" /> : <span className="material-symbols-outlined">bolt</span>}
               {loading ? "Creating" : `Create session · ${playerCount} player${playerCount === 1 ? "" : "s"}`}
             </button>

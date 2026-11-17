@@ -10,7 +10,8 @@ export function RiseLine({ text, delay, className }: { text: string; delay: numb
         <motion.span
           key={i}
           aria-hidden="true"
-          className="inline-block"
+          className="hl-ch inline-block"
+          style={{ "--i": i } as React.CSSProperties}
           initial={{ y: "105%", rotate: 8 }}
           animate={{ y: 0, rotate: 0 }}
           transition={{ type: "spring", stiffness: 380, damping: 26, delay: delay + i * 0.035 }}

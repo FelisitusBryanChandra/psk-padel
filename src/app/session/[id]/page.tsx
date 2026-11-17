@@ -10,6 +10,8 @@ import { LoadingModal } from "@/app/LoadingModal";
 import { RollingNumber } from "@/app/RollingNumber";
 import { StandingsTable } from "@/app/StandingsTable";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
+import { Segmented } from "@/app/PageHero";
+import { Tilt } from "@/app/Tilt";
 import { useSessionData } from "@/app/useSessionData";
 import { takeFinishedMatch } from "@/lib/lastFinishedMatch";
 import { computeMatchTitle } from "@/lib/matchTitle";
@@ -508,7 +510,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   {pickedRound !== null && !isCurrent && (
                     <button
                       onClick={() => setPickedRound(null)}
-                      className="ml-2 font-semibold text-lime"
+                      className="link-draw ml-2 font-semibold text-lime"
                     >
                       Back to live
                     </button>
@@ -563,25 +565,17 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
 
-        <div className="mt-3 flex gap-1 rounded-2xl bg-surface-high p-1">
-          {(["courts", "standings", "players"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`relative flex-1 rounded-xl py-2 font-heading text-base font-bold uppercase tracking-wide transition-colors duration-300 ${
-                tab === t ? "text-on-lime" : "text-ink-muted"
-              }`}
-            >
-              {tab === t && (
-                <motion.span
-                  layoutId="session-tab"
-                  className="absolute inset-0 -z-0 rounded-xl bg-lime"
-                  transition={SPRING}
-                />
-              )}
-              <span className="relative">{t}</span>
-            </button>
-          ))}
+        <div className="mt-3">
+          <Segmented
+            id="session-tab"
+            value={tab}
+            options={[
+              { value: "courts", label: "Courts" },
+              { value: "standings", label: "Standings" },
+              { value: "players", label: "Players" },
+            ]}
+            onChange={setTab}
+          />
         </div>
       </header>
 
@@ -716,6 +710,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               <button
                 onClick={startSession}
                 disabled={starting || session.players.length < 4 || needsTeams}
+                data-magnetic
                 className="shimmer-btn"
               >
                 {starting ? (
@@ -756,6 +751,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                       setReturnToMatchId(null);
                     }}
                     renderCard={(m) => (
+                      <Tilt className="rounded-3xl" max={5}>
                       <MatchCard
                         sessionId={id}
                         session={session}
@@ -777,6 +773,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                         }}
                         onReopen={() => reopenMatch(m.id)}
                       />
+                      </Tilt>
                     )}
                   />
                 </motion.div>
@@ -790,7 +787,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                     </h2>
                     <div className="flex flex-col divide-y divide-outline rounded-2xl bg-surface">
                       {nextRound.matches.map((m) => (
-                        <div key={m.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                        <div key={m.id} className="row-hover flex items-center gap-3 px-4 py-3 text-sm">
                           <span className="w-16 shrink-0 font-heading text-xs font-bold uppercase text-ink-muted">
                             {courtLabel(session, m.courtNumber)}
                           </span>
@@ -875,7 +872,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   <motion.div
                     layout
                     key={player.id}
-                    className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3"
+                    className="row-hover flex items-center gap-3 rounded-2xl bg-surface px-4 py-3"
                   >
                     {swappingId === player.id ? (
                       <>
@@ -1276,10 +1273,12 @@ function MatchCard({
             </button>
             <Link
               href={`/session/${sessionId}/match/${m.id}`}
-              className="pressable flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-lime font-heading text-lg font-extrabold uppercase tracking-wide text-on-lime"
+              data-magnetic
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-lime font-heading text-lg font-extrabold uppercase tracking-wide text-on-lime"
             >
               <span className="material-symbols-outlined text-xl">scoreboard</span>
               Scoreboard
+              <span className="nudge material-symbols-outlined text-xl">arrow_forward</span>
             </Link>
           </>
         ) : (

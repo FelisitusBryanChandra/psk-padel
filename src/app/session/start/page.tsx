@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { PageHero } from "@/app/PageHero";
+import { Tilt } from "@/app/Tilt";
 
 const OPTIONS = [
   {
@@ -45,9 +46,10 @@ export default function SessionStartPage() {
             transition={{ type: "spring", stiffness: 260, damping: 24, delay: 0.3 + i * 0.1 }}
             whileTap={{ scale: 0.97 }}
           >
+            <Tilt className="rounded-[28px]">
             <Link
               href={opt.href}
-              className={`relative flex min-h-40 flex-col justify-between overflow-hidden rounded-[28px] p-5 ${
+              className={`group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-[28px] p-5 ${
                 opt.accent ? "bg-lime text-on-lime" : "border-2 border-outline bg-surface text-ink"
               }`}
             >
@@ -66,7 +68,7 @@ export default function SessionStartPage() {
                 >
                   {opt.kicker}
                 </span>
-                <span className="material-symbols-outlined text-3xl">arrow_forward</span>
+                <span className="nudge material-symbols-outlined text-3xl">arrow_forward</span>
               </div>
               <div className="mt-8">
                 <h2 className="font-heading text-4xl font-black uppercase italic leading-none">
@@ -77,6 +79,7 @@ export default function SessionStartPage() {
                 </p>
               </div>
             </Link>
+            </Tilt>
           </motion.div>
         ))}
       </div>

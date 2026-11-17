@@ -126,7 +126,7 @@ export function StandingsTable({
               layout
               key={r.playerId}
               transition={SPRING}
-              className={`overflow-hidden rounded-2xl bg-surface ${
+              className={`row-hover overflow-hidden rounded-2xl bg-surface ${
                 r.winStreak >= 3 ? "streak-row" : ""
               }`}
             >

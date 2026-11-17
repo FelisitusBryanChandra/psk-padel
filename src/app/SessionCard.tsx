@@ -5,6 +5,7 @@ import Link from "next/link";
 import { animate, motion, useMotionValue } from "motion/react";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { RollingNumber } from "./RollingNumber";
+import { Tilt } from "./Tilt";
 
 export type SessionListItem = {
   id: string;
@@ -95,7 +96,7 @@ export function SessionCard({
         className="relative"
       >
         <Link href={`/session/${session.id}`} className="block" draggable={false}>
-          {card}
+          <Tilt className="rounded-[24px]">{card}</Tilt>
         </Link>
       </motion.div>
     </div>
@@ -322,7 +323,8 @@ function InviteCard({ s, showCommunity }: { s: SessionListItem; showCommunity: b
         </div>
         <button
           onClick={copyInvite}
-          className="pressable flex shrink-0 items-center gap-1.5 rounded-xl bg-lime px-3 py-2 text-xs font-semibold text-on-lime"
+          data-magnetic
+          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-lime px-3 py-2 text-xs font-semibold text-on-lime"
         >
           <span className="material-symbols-outlined text-base">{copied ? "check" : "share"}</span>
           {copied ? "Copied" : "Invite"}

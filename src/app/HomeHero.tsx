@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Logo } from "./Logo";
 import { RollingNumber } from "./RollingNumber";
@@ -20,6 +21,7 @@ export function HomeHero({
   tab: "ongoing" | "finished";
   onTab: (t: "ongoing" | "finished") => void;
 }) {
+  const [hovered, setHovered] = useState<"ongoing" | "finished" | null>(null);
   const now = new Date();
   const weekday = now.toLocaleDateString(undefined, { weekday: "long" }).toUpperCase();
   const dateChip = now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
@@ -78,7 +80,7 @@ export function HomeHero({
         </div>
       </div>
 
-      <h1 className="relative mt-7 font-heading text-[5.2rem] font-black uppercase italic leading-[0.82] tracking-tight text-ink">
+      <h1 className="hl-wave relative mt-7 w-fit font-heading text-[5.2rem] font-black uppercase italic leading-[0.82] tracking-tight text-ink">
         <RiseLine text={line1} delay={0.05} />
         <RiseLine text={line2} delay={0.2} className="text-lime" />
       </h1>
@@ -117,7 +119,10 @@ export function HomeHero({
       </motion.div>
 
       {sessions.length > 0 && (
-        <div className="relative mt-5 flex gap-1 rounded-2xl bg-surface-high p-1">
+        <div
+          className="relative mt-5 flex gap-1 rounded-2xl bg-surface-high p-1"
+          onPointerLeave={() => setHovered(null)}
+        >
           {(
             [
               ["ongoing", "Ongoing", ongoing],
@@ -127,10 +132,18 @@ export function HomeHero({
             <button
               key={key}
               onClick={() => onTab(key)}
+              onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(key)}
               className={`relative flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 font-heading text-lg font-extrabold uppercase tracking-wide transition-colors duration-300 ${
-                tab === key ? "text-on-lime" : "text-ink-muted"
+                tab === key ? "text-on-lime" : hovered === key ? "text-ink" : "text-ink-muted"
               }`}
             >
+              {hovered === key && tab !== key && (
+                <motion.span
+                  layoutId="home-tab-ghost"
+                  className="absolute inset-0 rounded-xl bg-ink/[0.07]"
+                  transition={SPRING}
+                />
+              )}
               {tab === key && (
                 <motion.span
                   layoutId="home-tab"

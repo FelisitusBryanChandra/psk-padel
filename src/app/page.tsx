@@ -164,7 +164,7 @@ export default function HomePage() {
             </h2>
             <a
               href={`/api/export?month=${month}`}
-              className="flex items-center gap-1 text-xs font-bold text-lime-dim"
+              className="link-draw flex items-center gap-1 text-xs font-bold text-lime-dim"
             >
               <span className="material-symbols-outlined text-sm">download</span>
               Download CSV

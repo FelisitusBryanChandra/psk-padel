@@ -72,7 +72,7 @@ function useCycle(length: number, ms = 4000) {
 // The New button: a padel ball. The target page is prefetched; every tap
 // gets an instant lime ring burst, and the ball keeps spinning while the
 // next page is still loading.
-function Ball({ size }: { size: number }) {
+function Ball({ size, label }: { size: number; label?: boolean }) {
   const router = useRouter();
   const [turns, setTurns] = useState(0);
   const [bursts, setBursts] = useState<number[]>([]);
@@ -81,7 +81,15 @@ function Ball({ size }: { size: number }) {
     router.prefetch(NEW_HREF);
   }, [router]);
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="group relative" style={{ width: size, height: size }}>
+      {label && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-full top-1/2 ml-5 -translate-y-1/2 -translate-x-2 whitespace-nowrap rounded-xl border border-outline bg-surface-highest px-3 py-1.5 text-xs font-semibold text-ink opacity-0 shadow-lg transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
+        >
+          New session
+        </span>
+      )}
       <AnimatePresence>
         {bursts.map((id) => (
           <motion.span
@@ -108,17 +116,23 @@ function Ball({ size }: { size: number }) {
         className="relative flex h-full w-full items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_8px_20px_-4px_rgba(0,0,0,0.6)] ring-[5px] ring-bg"
         animate={{ rotate: turns * 360 }}
         whileTap={{ scale: 0.86 }}
-        whileHover={{ scale: 1.06 }}
+        whileHover={{ scale: 1.07, y: -3 }}
         transition={{ type: "spring", stiffness: 160, damping: 14 }}
       >
+        {/* Seams roll a half turn on hover (they look identical at 180deg),
+            and spin continuously while the next page is loading. */}
         <svg
           aria-hidden="true"
           viewBox="0 0 52 52"
-          className={`absolute inset-0 h-full w-full ${pending ? "animate-spin" : ""}`}
+          className={`absolute inset-0 h-full w-full transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:rotate-180 ${
+            pending ? "animate-spin" : ""
+          }`}
           fill="none"
         >
           <path d="M8 13 C 19 21, 19 31, 8 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
           <path d="M44 13 C 33 21, 33 31, 44 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        <svg aria-hidden="true" viewBox="0 0 52 52" className="absolute inset-0 h-full w-full" fill="none">
           <path d="M26 17 V35 M17 26 H35" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
         </svg>
       </motion.button>
@@ -329,7 +343,7 @@ function Rail({ pathname, courts }: { pathname: string; courts: LiveCourt[] }) {
         <Logo className="h-7 w-auto text-lime" />
       </Link>
       <div className="my-3">
-        <Ball size={58} />
+        <Ball size={58} label />
       </div>
       <span className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-muted">New</span>
       <div className="my-1 h-px w-10 bg-outline" />

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { PageHero } from "@/app/PageHero";
 import { RollingNumber } from "@/app/RollingNumber";
+import { Tilt } from "@/app/Tilt";
 import type { CommunityStats } from "@/lib/communityStats";
 import { LogoutButton } from "./LogoutButton";
 
@@ -81,6 +82,7 @@ export default function ProfilePage() {
               {month} awards
             </h2>
 
+            <Tilt className="rounded-3xl">
             <div className="relative overflow-hidden rounded-3xl bg-lime p-5 text-on-lime">
               <span aria-hidden="true" className="card-sweep" />
               <span
@@ -100,6 +102,7 @@ export default function ProfilePage() {
                 </p>
               )}
             </div>
+            </Tilt>
 
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div className="rounded-3xl border border-outline bg-surface p-4">
@@ -147,7 +150,7 @@ export default function ProfilePage() {
                 {stats.topThreeThisMonth.map((e, idx) => (
                   <div
                     key={e.playerId}
-                    className="flex items-center gap-3 rounded-2xl border border-outline bg-surface px-4 py-3"
+                    className="row-hover flex items-center gap-3 rounded-2xl border border-outline bg-surface px-4 py-3"
                   >
                     <span
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-highest font-heading text-sm font-black text-ink"

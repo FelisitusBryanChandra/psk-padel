@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Logo } from "./Logo";
@@ -72,7 +73,7 @@ export function PageHero({
         )}
       </div>
 
-      <h1 className="relative mt-6 font-heading text-[clamp(3.6rem,19vw,4.8rem)] font-black uppercase italic leading-[0.84] tracking-tight text-ink">
+      <h1 className="hl-wave relative mt-6 w-fit font-heading text-[clamp(3.6rem,19vw,4.8rem)] font-black uppercase italic leading-[0.84] tracking-tight text-ink">
         <RiseLine text={line1} delay={0.05} />
         <RiseLine text={line2} delay={0.18} className="text-lime" />
       </h1>
@@ -92,7 +93,8 @@ export function PageHero({
 }
 
 // Pill switch with a springing accent highlight. `id` must be unique per
-// on-screen instance (it keys the shared highlight).
+// on-screen instance (it keys the shared highlights). With a mouse, a faint
+// ghost pill follows the cursor across options before you click.
 export function Segmented<T extends string>({
   id,
   value,
@@ -104,17 +106,26 @@ export function Segmented<T extends string>({
   options: readonly { value: T; label: React.ReactNode }[];
   onChange: (v: T) => void;
 }) {
+  const [hovered, setHovered] = useState<T | null>(null);
   return (
-    <div className="flex gap-1 rounded-2xl bg-surface-high p-1">
+    <div className="flex gap-1 rounded-2xl bg-surface-high p-1" onPointerLeave={() => setHovered(null)}>
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
           onClick={() => onChange(o.value)}
+          onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(o.value)}
           className={`relative flex flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2.5 font-heading text-base font-extrabold uppercase tracking-wide transition-colors duration-300 ${
-            value === o.value ? "text-on-lime" : "text-ink-muted"
+            value === o.value ? "text-on-lime" : hovered === o.value ? "text-ink" : "text-ink-muted"
           }`}
         >
+          {hovered === o.value && value !== o.value && (
+            <motion.span
+              layoutId={`seg-ghost-${id}`}
+              className="absolute inset-0 rounded-xl bg-ink/[0.07]"
+              transition={{ type: "spring", stiffness: 500, damping: 36 }}
+            />
+          )}
           {value === o.value && (
             <motion.span
               layoutId={`seg-${id}`}

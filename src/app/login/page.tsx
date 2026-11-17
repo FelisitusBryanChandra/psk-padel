@@ -88,7 +88,7 @@ function LoginForm() {
         </div>
 
         <div>
-          <h1 className="font-heading text-[clamp(4rem,22vw,5.4rem)] font-black uppercase italic leading-[0.82] tracking-tight text-ink">
+          <h1 className="hl-wave w-fit font-heading text-[clamp(4rem,22vw,5.4rem)] font-black uppercase italic leading-[0.82] tracking-tight text-ink">
             <RiseLine text="STEP ON" delay={0.15} />
             <RiseLine text="COURT." delay={0.35} className="text-lime" />
           </h1>
@@ -159,6 +159,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading || !passcode}
+              data-magnetic
               className="shimmer-btn group mt-1 py-4! text-xl!"
             >
               {loading ? (
@@ -169,7 +170,7 @@ function LoginForm() {
               ) : (
                 <>
                   Enter
-                  <span className="material-symbols-outlined text-2xl transition-transform duration-300 group-active:translate-x-1.5">
+                  <span className="nudge material-symbols-outlined text-2xl">
                     arrow_forward
                   </span>
                 </>
