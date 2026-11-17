@@ -64,11 +64,14 @@ function Tab({ href, label, icon, active }: { href: string; label: string; icon:
   );
 }
 
-// The New button: a padel ball sunk into the dock's notch. Spins a full
-// turn on tap, then navigates once the spin has visibly started.
+// The New button: a padel ball sunk into the dock's notch. The target page
+// is prefetched so the tap navigates instantly; the spin plays alongside.
 function Ball() {
   const router = useRouter();
   const [turns, setTurns] = useState(0);
+  useEffect(() => {
+    router.prefetch("/session/start");
+  }, [router]);
   return (
     <motion.button
       type="button"
@@ -76,7 +79,7 @@ function Ball() {
       onClick={() => {
         setTurns((t) => t + 1);
         navigator.vibrate?.(10);
-        setTimeout(() => router.push("/session/start"), 220);
+        router.push("/session/start");
       }}
       className="absolute left-1/2 z-10 flex items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_8px_20px_-4px_rgba(0,0,0,0.6)] ring-[5px] ring-bg"
       style={{ width: BALL, height: BALL, marginLeft: -BALL / 2, top: -BALL / 2 }}
