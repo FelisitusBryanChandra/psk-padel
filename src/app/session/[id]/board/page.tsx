@@ -7,6 +7,7 @@ import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { Logo } from "@/app/Logo";
 import { RollingNumber } from "@/app/RollingNumber";
 import { useSessionData } from "@/app/useSessionData";
+import { initialsFor } from "@/lib/initials";
 import { computeRanks, courtLabel, sortStandings, type MatchDto, type SessionDto } from "@/lib/types";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30 } as const;
@@ -33,7 +34,19 @@ function serverId(m: MatchDto) {
 
 // One court as a broadcast scoreboard: two team rows with avatars and huge
 // rolling scores; the leading team's score lights up.
-function CourtBoard({ session, m, i, solo }: { session: SessionDto; m: MatchDto; i: number; solo: boolean }) {
+function CourtBoard({
+  session,
+  m,
+  i,
+  solo,
+  labels,
+}: {
+  session: SessionDto;
+  m: MatchDto;
+  i: number;
+  solo: boolean;
+  labels: Map<string, string>;
+}) {
   const setMode = session.scoringMode === "SET";
   const s1 = setMode ? m.team1Games : m.team1Score;
   const s2 = setMode ? m.team2Games : m.team2Score;
@@ -66,7 +79,7 @@ function CourtBoard({ session, m, i, solo }: { session: SessionDto; m: MatchDto;
             <div className="flex -space-x-3">
               {t.players.map((p) => (
                 <span key={p.id} className="rounded-full ring-4 ring-surface">
-                  <Avatar name={p.name} size={solo ? 96 : 52} className="block" />
+                  <Avatar name={p.name} size={solo ? 96 : 52} className="block" badge={labels.get(p.name)} />
                 </span>
               ))}
             </div>
@@ -122,6 +135,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
   const ranks = computeRanks(sorted);
   const maxScore = Math.max(1, ...sorted.map((r) => r.score));
   const leader = sorted[0];
+  const labels = initialsFor([...session.players.map((sp) => sp.player.name), ...sorted.map((r) => r.name)]);
   const scoreLabel = session.scoringMode === "SET" ? "Games" : "Score";
   const finished = session.rounds.length > 0 && !currentRound;
 
@@ -208,7 +222,14 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
             >
               <AnimatePresence>
                 {liveMatches.map((m, i) => (
-                  <CourtBoard key={m.id} session={session} m={m} i={i} solo={liveMatches.length === 1} />
+                  <CourtBoard
+                    key={m.id}
+                    session={session}
+                    m={m}
+                    i={i}
+                    solo={liveMatches.length === 1}
+                    labels={labels}
+                  />
                 ))}
               </AnimatePresence>
             </div>
@@ -226,7 +247,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
               >
                 trophy
               </span>
-              <Avatar name={leader.name} size={140} ring="#0b0d0c" className="mt-4" />
+              <Avatar name={leader.name} size={140} ring="#0b0d0c" className="mt-4" badge={labels.get(leader.name)} />
               <p className="mt-5 font-heading text-[clamp(2.5rem,6vw,7rem)] font-black uppercase italic leading-[0.85]">
                 {leader.name}
               </p>
@@ -265,7 +286,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
                   >
                     {rank}
                   </span>
-                  <Avatar name={r.name} size={44} />
+                  <Avatar name={r.name} size={44} badge={labels.get(r.name)} />
                   <div className="relative min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate text-[clamp(1rem,1.4vw,1.7rem)] font-semibold">
                       {r.name}

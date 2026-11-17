@@ -30,11 +30,15 @@ export function Avatar({
   size = 36,
   className = "",
   ring,
+  badge,
 }: {
   name: string;
   size?: number;
   className?: string;
   ring?: string;
+  // Short label (from initialsFor) shown in a corner chip, so faces stay
+  // recognizable when no name is printed next to them.
+  badge?: string;
 }) {
   const r = stream(hash(name.trim().toLowerCase()));
   const pick = <T,>(arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
@@ -50,13 +54,21 @@ export function Avatar({
   const mouth = Math.floor(r() * 4);
   const hasBand = r() < 0.45;
 
+  // Small avatars get a proportionally bigger chip so the label stays legible.
+  const chip = Math.max(15, Math.round(size * (size < 40 ? 0.5 : 0.38)));
+
   return (
     <span
-      className={`inline-block shrink-0 overflow-hidden rounded-full ${className}`}
-      style={{ width: size, height: size, boxShadow: ring ? `0 0 0 3px ${ring}` : undefined }}
-      aria-hidden="true"
+      className={`relative inline-block shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+      title={name}
     >
-      <svg viewBox="0 0 36 36" width={size} height={size}>
+      <span
+        className="block h-full w-full overflow-hidden rounded-full"
+        style={{ boxShadow: ring ? `0 0 0 3px ${ring}` : undefined }}
+        aria-hidden="true"
+      >
+      <svg viewBox="0 0 36 36" width={size} height={size} className="block">
         <rect width="36" height="36" fill={bg} />
         <g transform={`translate(${dx} ${dy}) rotate(${tilt} 18 18)`}>
           <rect x="6" y="6" width="24" height="26" rx={radius} fill={head} />
@@ -87,6 +99,23 @@ export function Avatar({
           {mouth === 3 && <path d="M13.5 24 Q18 29.5 22.5 24 Z" fill={INK} />}
         </g>
       </svg>
+      </span>
+      {badge && (
+        <span
+          className="absolute flex items-center justify-center rounded-full bg-[#0b0d0c] font-heading font-black leading-none tracking-tight text-[#d4ff3a]"
+          style={{
+            right: -size * 0.12,
+            bottom: -size * 0.08,
+            height: chip,
+            minWidth: chip,
+            padding: `0 ${Math.round(chip * 0.28)}px`,
+            fontSize: Math.round(chip * 0.66),
+            boxShadow: "0 0 0 1.5px rgba(212,255,58,0.35)",
+          }}
+        >
+          {badge}
+        </span>
+      )}
     </span>
   );
 }

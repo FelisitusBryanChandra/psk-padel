@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import { initialsFor } from "@/lib/initials";
 import { Avatar } from "./Avatar";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { RollingNumber } from "./RollingNumber";
@@ -141,6 +142,7 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
   // 0-0 says nothing, so it's left out.
   const activeCourts = s.liveCourts.filter((c) => c.team1 + c.team2 > 0);
   const shownNames = s.playerNames.slice(0, 4);
+  const labels = initialsFor(s.playerNames);
   const extra = s.playerNames.length - shownNames.length;
 
   return (
@@ -217,20 +219,18 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
         )}
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex pl-1.5">
+          <div className="flex items-center gap-2.5 pb-1 pr-1">
             {shownNames.map((n) => (
-              <span key={n} className="-ml-1.5 rounded-full border-2 border-lime">
-                <Avatar name={n} size={26} className="block" />
-              </span>
+              <Avatar key={n} name={n} size={28} className="block" badge={labels.get(n)} />
             ))}
             {extra > 0 && (
-              <span className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-lime bg-on-lime text-[10px] font-bold text-lime">
+              <span className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-on-lime text-[10px] font-bold text-lime">
                 +{extra}
               </span>
             )}
           </div>
           <span className="truncate text-xs font-semibold">
-            {s.matchesDone}/{s.matchesTotal} matches played
+            {s.matchesDone}/{s.matchesTotal} played
           </span>
         </div>
       </div>
@@ -306,6 +306,7 @@ function ResultPoster({ s, showCommunity }: { s: SessionListItem; showCommunity:
 function InviteCard({ s, showCommunity }: { s: SessionListItem; showCommunity: boolean }) {
   const [copied, setCopied] = useState(false);
   const seats = Math.max(s.courts * 4, s.playerCount);
+  const labels = initialsFor(s.playerNames);
   const date = new Date(s.date).toLocaleDateString(undefined, {
     weekday: "short",
     day: "numeric",
@@ -358,7 +359,7 @@ function InviteCard({ s, showCommunity }: { s: SessionListItem; showCommunity: b
               }`}
               title={name}
             >
-              {name && <Avatar name={name} size={32} />}
+              {name && <Avatar name={name} size={32} badge={labels.get(name)} />}
             </motion.span>
           );
         })}

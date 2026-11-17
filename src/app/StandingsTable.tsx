@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { initialsFor } from "@/lib/initials";
 import { computeRanks, sortStandings, type StandingRow } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { RollingNumber } from "./RollingNumber";
@@ -66,7 +67,15 @@ function Confetti() {
 
 // Top 3 on stepped blocks (2nd, 1st, 3rd): avatars bounce in, the champion
 // gets a dropping crown, spotlights and a confetti burst, scores roll up.
-function Podium({ top3, ranks }: { top3: StandingRow[]; ranks: number[] }) {
+function Podium({
+  top3,
+  ranks,
+  labels,
+}: {
+  top3: StandingRow[];
+  ranks: number[];
+  labels: Map<string, string>;
+}) {
   const order = [
     { row: top3[1], place: 2, rank: ranks[1], h: 92, size: 54, delay: 0.25 },
     { row: top3[0], place: 1, rank: ranks[0], h: 132, size: 72, delay: 0.5 },
@@ -103,7 +112,7 @@ function Podium({ top3, ranks }: { top3: StandingRow[]; ranks: number[] }) {
                 animate={{ scale: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 340, damping: 14, delay }}
               >
-                <Avatar name={row.name} size={size} ring={MEDAL[rank - 1]} />
+                <Avatar name={row.name} size={size} ring={MEDAL[rank - 1]} badge={labels.get(row.name)} />
               </motion.div>
               <motion.span
                 initial={{ opacity: 0, y: 8 }}
@@ -152,6 +161,7 @@ export function StandingsTable({
   const sorted = sortStandings(rows);
   const ranks = computeRanks(sorted);
   const maxScore = Math.max(1, ...sorted.map((r) => r.score));
+  const labels = initialsFor(sorted.map((r) => r.name));
   const [expanded, setExpanded] = useState<string | null>(null);
 
   // Remember each player's previous position so a re-sort can show ▲/▼.
@@ -171,7 +181,7 @@ export function StandingsTable({
 
   return (
     <div>
-      {sorted.length >= 3 && <Podium top3={sorted.slice(0, 3)} ranks={ranks} />}
+      {sorted.length >= 3 && <Podium top3={sorted.slice(0, 3)} ranks={ranks} labels={labels} />}
 
       <div className="mb-2 flex items-center justify-between px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
         <span>Race</span>
@@ -223,7 +233,7 @@ export function StandingsTable({
                 >
                   {rank}
                 </span>
-                <Avatar name={r.name} size={36} />
+                <Avatar name={r.name} size={36} badge={labels.get(r.name)} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="truncate text-base font-semibold text-ink">{r.name}</span>

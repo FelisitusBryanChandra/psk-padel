@@ -11,6 +11,7 @@ import { RollingNumber } from "@/app/RollingNumber";
 import { StandingsTable } from "@/app/StandingsTable";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
 import { Avatar } from "@/app/Avatar";
+import { initialsFor } from "@/lib/initials";
 import { Segmented } from "@/app/PageHero";
 import { Tilt } from "@/app/Tilt";
 import { useSessionData } from "@/app/useSessionData";
@@ -369,6 +370,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   }
 
   const rosterPlayers = session.players.map((sp) => sp.player);
+  const playerLabels = initialsFor(rosterPlayers.map((p) => p.name));
   const pairedIds = new Set(teamPairs.flat());
   const unpairedPlayers = rosterPlayers.filter((p) => !pairedIds.has(p.id));
   const teamsComplete =
@@ -901,7 +903,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                       </>
                     ) : (
                       <>
-                        <Avatar name={player.name} size={36} />
+                        <Avatar name={player.name} size={36} badge={playerLabels.get(player.name)} />
                         <span className="min-w-0 flex-1 truncate text-base text-ink">
                           {player.name}
                         </span>
