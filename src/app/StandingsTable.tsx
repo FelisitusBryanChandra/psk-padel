@@ -85,11 +85,15 @@ function Podium({ top3, ranks }: { top3: StandingRow[]; ranks: number[] }) {
               {place === 1 && (
                 <motion.span
                   aria-hidden="true"
-                  className="material-symbols-outlined absolute -top-8 z-10 text-4xl text-[#f7cf4f] drop-shadow-[0_4px_10px_rgba(247,207,79,0.6)]"
+                  className="material-symbols-outlined absolute -top-10 z-10 text-5xl text-[#f7cf4f] drop-shadow-[0_4px_10px_rgba(247,207,79,0.6)]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                   initial={{ y: -60, opacity: 0, rotate: -30 }}
                   animate={{ y: 0, opacity: 1, rotate: [-30, 12, -6, 0] }}
-                  transition={{ type: "spring", stiffness: 260, damping: 12, delay: delay + 0.35 }}
+                  transition={{
+                    y: { type: "spring", stiffness: 260, damping: 12, delay: delay + 0.35 },
+                    opacity: { duration: 0.2, delay: delay + 0.35 },
+                    rotate: { duration: 0.9, ease: "easeOut", delay: delay + 0.35 },
+                  }}
                 >
                   crown
                 </motion.span>

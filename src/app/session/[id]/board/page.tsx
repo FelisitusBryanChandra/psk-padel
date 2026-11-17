@@ -33,7 +33,7 @@ function serverId(m: MatchDto) {
 
 // One court as a broadcast scoreboard: two team rows with avatars and huge
 // rolling scores; the leading team's score lights up.
-function CourtBoard({ session, m, i }: { session: SessionDto; m: MatchDto; i: number }) {
+function CourtBoard({ session, m, i, solo }: { session: SessionDto; m: MatchDto; i: number; solo: boolean }) {
   const setMode = session.scoringMode === "SET";
   const s1 = setMode ? m.team1Games : m.team1Score;
   const s2 = setMode ? m.team2Games : m.team2Score;
@@ -66,7 +66,7 @@ function CourtBoard({ session, m, i }: { session: SessionDto; m: MatchDto; i: nu
             <div className="flex -space-x-3">
               {t.players.map((p) => (
                 <span key={p.id} className="rounded-full ring-4 ring-surface">
-                  <Avatar name={p.name} size={52} className="block" />
+                  <Avatar name={p.name} size={solo ? 96 : 52} className="block" />
                 </span>
               ))}
             </div>
@@ -74,7 +74,9 @@ function CourtBoard({ session, m, i }: { session: SessionDto; m: MatchDto; i: nu
               {t.players.map((p) => (
                 <p
                   key={p.id}
-                  className={`flex items-center gap-2 truncate text-[clamp(1rem,1.4vw,1.7rem)] font-semibold leading-tight ${
+                  className={`flex items-center gap-2 truncate font-semibold leading-tight ${
+                    solo ? "text-[clamp(1.4rem,2.4vw,3rem)]" : "text-[clamp(1rem,1.4vw,1.7rem)]"
+                  } ${
                     t.ahead ? "text-ink" : "text-ink-muted"
                   }`}
                 >
@@ -85,7 +87,9 @@ function CourtBoard({ session, m, i }: { session: SessionDto; m: MatchDto; i: nu
             </div>
             <RollingNumber
               value={t.score}
-              className={`font-heading text-[clamp(3.5rem,6vw,7.5rem)] font-black transition-colors duration-500 ${
+              className={`font-heading font-black transition-colors duration-500 ${
+                solo ? "text-[clamp(5rem,11vw,13rem)]" : "text-[clamp(3.5rem,6vw,7.5rem)]"
+              } ${
                 t.ahead ? "text-lime" : "text-ink"
               }`}
             />
@@ -204,7 +208,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
             >
               <AnimatePresence>
                 {liveMatches.map((m, i) => (
-                  <CourtBoard key={m.id} session={session} m={m} i={i} />
+                  <CourtBoard key={m.id} session={session} m={m} i={i} solo={liveMatches.length === 1} />
                 ))}
               </AnimatePresence>
             </div>

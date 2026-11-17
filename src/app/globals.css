@@ -544,7 +544,7 @@
 /* Podium spotlights: two soft beams swaying behind the champion. */
 .spotlight {
   position: absolute;
-  top: -60px;
+  top: -12px;
   width: 42%;
   height: 340px;
   background: linear-gradient(
