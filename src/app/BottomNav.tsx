@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -65,34 +65,62 @@ function Tab({ href, label, icon, active }: { href: string; label: string; icon:
 }
 
 // The New button: a padel ball sunk into the dock's notch. The target page
-// is prefetched so the tap navigates instantly; the spin plays alongside.
+// is prefetched so the tap navigates right away. Every tap gets an instant
+// lime ring burst; while the next page is still loading, the ball keeps
+// spinning as a loading indicator.
 function Ball() {
   const router = useRouter();
   const [turns, setTurns] = useState(0);
+  const [bursts, setBursts] = useState<number[]>([]);
+  const [pending, startTransition] = useTransition();
   useEffect(() => {
     router.prefetch("/session/start");
   }, [router]);
   return (
-    <motion.button
-      type="button"
-      aria-label="New session"
-      onClick={() => {
-        setTurns((t) => t + 1);
-        navigator.vibrate?.(10);
-        router.push("/session/start");
-      }}
-      className="absolute left-1/2 z-10 flex items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_8px_20px_-4px_rgba(0,0,0,0.6)] ring-[5px] ring-bg"
+    <div
+      className="absolute left-1/2 z-10"
       style={{ width: BALL, height: BALL, marginLeft: -BALL / 2, top: -BALL / 2 }}
-      animate={{ rotate: turns * 360 }}
-      whileTap={{ scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 140, damping: 15 }}
     >
-      <svg aria-hidden="true" viewBox="0 0 52 52" className="absolute inset-0 h-full w-full" fill="none">
-        <path d="M8 13 C 19 21, 19 31, 8 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
-        <path d="M44 13 C 33 21, 33 31, 44 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
-        <path d="M26 17 V35 M17 26 H35" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
-      </svg>
-    </motion.button>
+      <AnimatePresence>
+        {bursts.map((id) => (
+          <motion.span
+            key={id}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-full border-2 border-lime"
+            initial={{ scale: 1, opacity: 0.9 }}
+            animate={{ scale: 2.3, opacity: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            onAnimationComplete={() => setBursts((b) => b.filter((x) => x !== id))}
+          />
+        ))}
+      </AnimatePresence>
+      <motion.button
+        type="button"
+        aria-label="New session"
+        aria-busy={pending}
+        onClick={() => {
+          setTurns((t) => t + 1);
+          setBursts((b) => [...b, Date.now()]);
+          navigator.vibrate?.(10);
+          startTransition(() => router.push("/session/start"));
+        }}
+        className="relative flex h-full w-full items-center justify-center rounded-full bg-lime text-on-lime shadow-[0_8px_20px_-4px_rgba(0,0,0,0.6)] ring-[5px] ring-bg"
+        animate={{ rotate: turns * 360 }}
+        whileTap={{ scale: 0.86 }}
+        transition={{ type: "spring", stiffness: 160, damping: 14 }}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 52 52"
+          className={`absolute inset-0 h-full w-full ${pending ? "animate-spin" : ""}`}
+          fill="none"
+        >
+          <path d="M8 13 C 19 21, 19 31, 8 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+          <path d="M44 13 C 33 21, 33 31, 44 39" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+          <path d="M26 17 V35 M17 26 H35" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+        </svg>
+      </motion.button>
+    </div>
   );
 }
 
