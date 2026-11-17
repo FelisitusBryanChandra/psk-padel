@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { BottomNav } from "@/app/BottomNav";
 import { PageHero, Segmented } from "@/app/PageHero";
-import { SideNav } from "@/app/SideNav";
 import { Spinner } from "@/app/Spinner";
 import type { MatchHistoryEntry } from "@/lib/matchHistory";
 
@@ -202,8 +200,6 @@ export default function HistoryPage() {
         </div>
       )}
 
-      <SideNav />
-      <BottomNav />
     </main>
   );
 }

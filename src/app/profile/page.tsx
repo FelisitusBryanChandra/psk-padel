@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { BottomNav } from "@/app/BottomNav";
 import { PageHero } from "@/app/PageHero";
 import { RollingNumber } from "@/app/RollingNumber";
-import { SideNav } from "@/app/SideNav";
 import type { CommunityStats } from "@/lib/communityStats";
 import { LogoutButton } from "./LogoutButton";
 
@@ -181,8 +179,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <SideNav />
-      <BottomNav />
     </main>
   );
 }

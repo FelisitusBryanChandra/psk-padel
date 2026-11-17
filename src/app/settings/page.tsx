@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { BottomNav } from "@/app/BottomNav";
 import { PageHero } from "@/app/PageHero";
-import { SideNav } from "@/app/SideNav";
 import { SETTINGS_STORAGE_KEY } from "@/lib/settings";
 import { ACCENT_THEMES, applyAccentTheme, readAccentTheme, type AccentTheme } from "@/lib/theme";
 
@@ -206,8 +204,6 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <SideNav />
-      <BottomNav />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
 import Script from "next/script";
+import { AppNav } from "./AppNav";
 import { WaveBackground } from "./WaveBackground";
 import "./globals.css";
 
@@ -50,6 +51,7 @@ export default function RootLayout({
         />
         <WaveBackground />
         {children}
+        <AppNav />
       </body>
     </html>
   );

@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BottomNav } from "./BottomNav";
 import { HomeHero } from "./HomeHero";
 import { SessionCard, type SessionListItem } from "./SessionCard";
-import { SideNav } from "./SideNav";
 
 function HomeSkeleton() {
   return (
@@ -40,8 +38,6 @@ function HomeSkeleton() {
           </div>
         ))}
       </div>
-      <SideNav />
-      <BottomNav />
     </main>
   );
 }
@@ -187,8 +183,6 @@ export default function HomePage() {
           </div>
         </section>
       ))}
-      <SideNav />
-      <BottomNav />
     </main>
   );
 }
