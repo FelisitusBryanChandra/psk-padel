@@ -49,10 +49,14 @@ export function SessionCard({
   const deleteOpacity = useTransform(x, [-24, -4], [1, 0]);
   const dragged = useRef(false);
   const [open, setOpen] = useState(false);
+  // Clip only while swiping, so a hover tilt is never cropped at the edges.
+  const [clip, setClip] = useState(false);
 
   function settle(toOpen: boolean) {
     setOpen(toOpen);
-    animate(x, toOpen ? -REVEAL : 0, { type: "spring", stiffness: 500, damping: 38 });
+    animate(x, toOpen ? -REVEAL : 0, { type: "spring", stiffness: 500, damping: 38 }).then(() => {
+      if (!toOpen) setClip(false);
+    });
   }
 
   const card =
@@ -65,7 +69,7 @@ export function SessionCard({
     );
 
   return (
-    <div className="relative overflow-hidden rounded-[24px]">
+    <div className={`relative rounded-[24px] ${clip ? "overflow-hidden" : ""}`}>
       <motion.div
         style={{ opacity: deleteOpacity }}
         className="absolute inset-y-0 right-0 flex w-full items-stretch justify-end rounded-[24px] bg-live"
@@ -87,7 +91,10 @@ export function SessionCard({
         dragConstraints={{ left: -REVEAL, right: 0 }}
         dragElastic={0.12}
         dragMomentum={false}
-        onDragStart={() => (dragged.current = true)}
+        onDragStart={() => {
+          dragged.current = true;
+          setClip(true);
+        }}
         onDragEnd={(_, info) => {
           settle(info.offset.x < -REVEAL / 2 || (open && info.offset.x < 20));
           setTimeout(() => (dragged.current = false), 0);

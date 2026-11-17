@@ -1,9 +1,13 @@
 "use client";
 
 import { useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+
+const SPRING = { stiffness: 220, damping: 22, mass: 0.6 };
 
 // Wraps a card so it tilts toward a mouse cursor in 3D with a soft glare
-// following it. Mouse only: touch input is ignored, so swipes and taps on
+// following it. Spring-driven, so it glides after the cursor and eases back
+// on leave. Mouse only: touch input is ignored, so swipes and taps on
 // phones behave exactly as before.
 export function Tilt({
   children,
@@ -17,40 +21,52 @@ export function Tilt({
   lift?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Pointer position across the card, 0..1 on each axis; 0.5 = centered.
+  const px = useMotionValue(0.5);
+  const py = useMotionValue(0.5);
+  const hover = useMotionValue(0);
+
+  const sx = useSpring(px, SPRING);
+  const sy = useSpring(py, SPRING);
+  const sh = useSpring(hover, SPRING);
+
+  const rotateY = useTransform(sx, [0, 1], [-max, max]);
+  const rotateX = useTransform(sy, [0, 1], [max, -max]);
+  const y = useTransform(sh, [0, 1], [0, lift ? -3 : 0]);
+  const glareX = useTransform(sx, (v) => `${(v * 100).toFixed(1)}%`);
+  const glareY = useTransform(sy, (v) => `${(v * 100).toFixed(1)}%`);
+  const glareOpacity = useTransform(sh, [0, 1], [0, 1]);
 
   function onMove(e: React.PointerEvent<HTMLDivElement>) {
     if (e.pointerType !== "mouse") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    el.style.transition = "transform 120ms ease-out";
-    el.style.transform = `perspective(900px) rotateX(${((0.5 - py) * max).toFixed(2)}deg) rotateY(${(
-      (px - 0.5) *
-      max
-    ).toFixed(2)}deg)${lift ? " translateY(-3px)" : ""}`;
-    el.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
-    el.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    px.set(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+    py.set(Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)));
+    hover.set(1);
   }
 
   function onLeave() {
-    const el = ref.current;
-    if (!el) return;
-    el.style.transition = "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)";
-    el.style.transform = "";
+    px.set(0.5);
+    py.set(0.5);
+    hover.set(0);
   }
 
   return (
-    <div
+    <motion.div
       ref={ref}
       onPointerMove={onMove}
       onPointerLeave={onLeave}
-      className={`tilt-wrap relative will-change-transform ${className}`}
+      style={{ rotateX, rotateY, y, transformPerspective: 900 }}
+      className={`tilt-wrap relative ${className}`}
     >
       {children}
-      <span aria-hidden="true" className="tilt-glare" />
-    </div>
+      <motion.span
+        aria-hidden="true"
+        className="tilt-glare"
+        style={{ opacity: glareOpacity, "--gx": glareX, "--gy": glareY } as never}
+      />
+    </motion.div>
   );
 }
