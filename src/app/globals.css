@@ -541,6 +541,40 @@
   }
 }
 
+/* Podium spotlights: two soft beams swaying behind the champion. */
+.spotlight {
+  position: absolute;
+  top: -60px;
+  width: 42%;
+  height: 340px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-lime) 38%, transparent),
+    transparent 85%
+  );
+  clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  filter: blur(6px);
+  opacity: 0.55;
+  pointer-events: none;
+  transform-origin: 50% 0;
+}
+.spotlight-l {
+  left: 14%;
+  animation: beam-sway 6s ease-in-out infinite alternate;
+}
+.spotlight-r {
+  right: 14%;
+  animation: beam-sway 6s ease-in-out -3s infinite alternate-reverse;
+}
+@keyframes beam-sway {
+  from {
+    rotate: -14deg;
+  }
+  to {
+    rotate: 10deg;
+  }
+}
+
 /* Hover system. Everything below only applies with a real mouse/trackpad,
    so touch devices never get stuck hover states. Effects use the
    individual translate/rotate/scale properties so they stack on top of the

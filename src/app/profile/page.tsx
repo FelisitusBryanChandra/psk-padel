@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { Avatar } from "@/app/Avatar";
 import { PageHero } from "@/app/PageHero";
 import { RollingNumber } from "@/app/RollingNumber";
 import { Tilt } from "@/app/Tilt";
@@ -9,11 +10,6 @@ import type { CommunityStats } from "@/lib/communityStats";
 import { LogoutButton } from "./LogoutButton";
 
 const MEDAL = ["#f7cf4f", "#d5dce3", "#dd8f45"];
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
-}
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -152,12 +148,7 @@ export default function ProfilePage() {
                     key={e.playerId}
                     className="row-hover flex items-center gap-3 rounded-2xl border border-outline bg-surface px-4 py-3"
                   >
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-highest font-heading text-sm font-black text-ink"
-                      style={{ boxShadow: `0 0 0 3px ${MEDAL[idx]}` }}
-                    >
-                      {initials(e.name)}
-                    </span>
+                    <Avatar name={e.name} size={40} ring={MEDAL[idx]} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-base font-semibold text-ink">{e.name}</p>
                       <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface-highest">

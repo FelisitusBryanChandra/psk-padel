@@ -10,6 +10,7 @@ import { LoadingModal } from "@/app/LoadingModal";
 import { RollingNumber } from "@/app/RollingNumber";
 import { StandingsTable } from "@/app/StandingsTable";
 import { ExportStandingsButton } from "@/app/ExportStandingsButton";
+import { Avatar } from "@/app/Avatar";
 import { Segmented } from "@/app/PageHero";
 import { Tilt } from "@/app/Tilt";
 import { useSessionData } from "@/app/useSessionData";
@@ -900,9 +901,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                       </>
                     ) : (
                       <>
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-highest font-heading text-sm font-bold uppercase text-ink">
-                          {player.name.slice(0, 2)}
-                        </span>
+                        <Avatar name={player.name} size={36} />
                         <span className="min-w-0 flex-1 truncate text-base text-ink">
                           {player.name}
                         </span>

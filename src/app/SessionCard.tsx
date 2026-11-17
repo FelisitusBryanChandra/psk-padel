@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import { Avatar } from "./Avatar";
 import { DeleteSessionButton } from "./DeleteSessionButton";
 import { RollingNumber } from "./RollingNumber";
 import { Tilt } from "./Tilt";
@@ -218,11 +219,8 @@ function LiveTicket({ s, showCommunity }: { s: SessionListItem; showCommunity: b
         <div className="mt-3 flex items-center justify-between gap-2">
           <div className="flex pl-1.5">
             {shownNames.map((n) => (
-              <span
-                key={n}
-                className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-lime bg-on-lime text-[10px] font-bold text-lime"
-              >
-                {initials(n)}
+              <span key={n} className="-ml-1.5 rounded-full border-2 border-lime">
+                <Avatar name={n} size={26} className="block" />
               </span>
             ))}
             {extra > 0 && (
@@ -355,11 +353,12 @@ function InviteCard({ s, showCommunity }: { s: SessionListItem; showCommunity: b
               initial={{ scale: 0.4, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 420, damping: 20, delay: 0.04 * i }}
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ${
-                name ? "bg-lime text-on-lime" : "border-2 border-dashed border-outline text-ink-muted"
+              className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                name ? "" : "border-2 border-dashed border-outline"
               }`}
+              title={name}
             >
-              {name ? initials(name) : ""}
+              {name && <Avatar name={name} size={32} />}
             </motion.span>
           );
         })}

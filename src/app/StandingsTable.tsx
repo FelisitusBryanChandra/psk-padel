@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { computeRanks, sortStandings, type StandingRow } from "@/lib/types";
+import { Avatar } from "./Avatar";
 import { RollingNumber } from "./RollingNumber";
 
 const SPRING = { type: "spring", stiffness: 380, damping: 32 } as const;
 const MEDAL = ["#f7cf4f", "#d5dce3", "#dd8f45"];
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w[0]));
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
-}
+const CONFETTI = ["#d4ff3a", "#ff7a1a", "#3af0ff", "#ff5fa2", "#ffd75e", "#ffffff"];
 
 function Streak({ n }: { n: number }) {
   if (n < 3) return null;
@@ -25,55 +22,116 @@ function Streak({ n }: { n: number }) {
   );
 }
 
-// Top 3 as stepped podium blocks (2nd, 1st, 3rd) that spring up from the floor.
-// The number shown is the competition rank, so a tie for 1st reads "1, 1".
+// Rolls up from 0 to the value shortly after it first appears.
+function CountUp({ value, className, delay = 400 }: { value: number; className?: string; delay?: number }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setShown(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return <RollingNumber value={shown} className={className} />;
+}
+
+// One-off confetti burst from the champion's block. Keyed by the leader, so
+// a new leader gets a new celebration.
+function Confetti() {
+  const pieces = Array.from({ length: 26 }, (_, i) => {
+    const angle = (-90 + (i / 25) * 180 - 90) * (Math.PI / 180) + (i % 3) * 0.12;
+    const dist = 90 + ((i * 37) % 70);
+    return {
+      i,
+      x: Math.cos(angle) * dist,
+      y: Math.sin(angle) * dist - 30,
+      rot: ((i * 53) % 360) - 180,
+      color: CONFETTI[i % CONFETTI.length],
+      w: i % 2 ? 6 : 4,
+      h: i % 2 ? 10 : 6,
+    };
+  });
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-10 z-20">
+      {pieces.map((p) => (
+        <motion.span
+          key={p.i}
+          className="absolute rounded-[2px]"
+          style={{ width: p.w, height: p.h, background: p.color }}
+          initial={{ x: 0, y: 0, opacity: 1, rotate: 0, scale: 0.4 }}
+          animate={{ x: p.x, y: [0, p.y, p.y + 120], opacity: [1, 1, 0], rotate: p.rot * 3, scale: 1 }}
+          transition={{ duration: 1.6, delay: 0.75, ease: [0.22, 1, 0.36, 1], times: [0, 0.4, 1] }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Top 3 on stepped blocks (2nd, 1st, 3rd): avatars bounce in, the champion
+// gets a dropping crown, spotlights and a confetti burst, scores roll up.
 function Podium({ top3, ranks }: { top3: StandingRow[]; ranks: number[] }) {
   const order = [
-    { row: top3[1], place: 2, rank: ranks[1], h: 92 },
-    { row: top3[0], place: 1, rank: ranks[0], h: 132 },
-    { row: top3[2], place: 3, rank: ranks[2], h: 72 },
+    { row: top3[1], place: 2, rank: ranks[1], h: 92, size: 54, delay: 0.25 },
+    { row: top3[0], place: 1, rank: ranks[0], h: 132, size: 72, delay: 0.5 },
+    { row: top3[2], place: 3, rank: ranks[2], h: 72, size: 50, delay: 0.1 },
   ];
+  const champion = top3[0];
   return (
-    <div className="mb-5 flex items-end gap-2 pt-2">
-      {order.map(({ row, place, rank, h }) => (
-        <div key={row.playerId} className="flex min-w-0 flex-1 flex-col items-center">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...SPRING, delay: 0.25 + place * 0.08 }}
-            className="mb-2 flex w-full flex-col items-center text-center"
-          >
-            <span
-              className={`flex items-center justify-center rounded-full font-heading font-black ${
-                place === 1 ? "h-14 w-14 bg-lime text-xl text-on-lime" : "h-11 w-11 bg-surface-highest text-base text-ink"
+    <div className="relative mb-6 pt-8">
+      <span aria-hidden="true" className="spotlight spotlight-l" />
+      <span aria-hidden="true" className="spotlight spotlight-r" />
+      {champion.score > 0 && <Confetti key={champion.playerId} />}
+      <div className="relative flex items-end gap-2">
+        {order.map(({ row, place, rank, h, size, delay }) => (
+          <div key={row.playerId} className="flex min-w-0 flex-1 flex-col items-center">
+            <div className="relative mb-2 flex w-full flex-col items-center text-center">
+              {place === 1 && (
+                <motion.span
+                  aria-hidden="true"
+                  className="material-symbols-outlined absolute -top-8 z-10 text-4xl text-[#f7cf4f] drop-shadow-[0_4px_10px_rgba(247,207,79,0.6)]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  initial={{ y: -60, opacity: 0, rotate: -30 }}
+                  animate={{ y: 0, opacity: 1, rotate: [-30, 12, -6, 0] }}
+                  transition={{ type: "spring", stiffness: 260, damping: 12, delay: delay + 0.35 }}
+                >
+                  crown
+                </motion.span>
+              )}
+              <motion.div
+                initial={{ scale: 0, y: 30 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 340, damping: 14, delay }}
+              >
+                <Avatar name={row.name} size={size} ring={MEDAL[rank - 1]} />
+              </motion.div>
+              <motion.span
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: delay + 0.15, duration: 0.4 }}
+                className="mt-2 w-full truncate font-heading text-base font-bold uppercase leading-tight text-ink"
+              >
+                {row.name}
+              </motion.span>
+              <span className="mt-0.5">
+                <Streak n={row.winStreak} />
+              </span>
+            </div>
+            <motion.div
+              className={`relative flex w-full flex-col items-center justify-start overflow-hidden rounded-t-2xl pt-2 ${
+                place === 1 ? "bg-lime text-on-lime" : "bg-surface-high text-ink"
               }`}
-              style={{ boxShadow: `0 0 0 3px ${MEDAL[rank - 1]}` }}
+              initial={{ height: 0 }}
+              animate={{ height: h }}
+              transition={{ type: "spring", stiffness: 200, damping: 20, delay: delay - 0.1 }}
             >
-              {initials(row.name)}
-            </span>
-            <span className="mt-1.5 w-full truncate font-heading text-base font-bold uppercase leading-tight text-ink">
-              {row.name}
-            </span>
-            <span className="mt-0.5">
-              <Streak n={row.winStreak} />
-            </span>
-          </motion.div>
-          <motion.div
-            className={`flex w-full flex-col items-center justify-start rounded-t-2xl pt-2 ${
-              place === 1 ? "bg-lime text-on-lime" : "bg-surface-high text-ink"
-            }`}
-            initial={{ height: 0 }}
-            animate={{ height: h }}
-            transition={{ type: "spring", stiffness: 200, damping: 20, delay: place * 0.08 }}
-          >
-            <span className="font-heading text-4xl font-black leading-none">{rank}</span>
-            <RollingNumber
-              value={row.score}
-              className="mt-1 font-heading text-lg font-extrabold opacity-80"
-            />
-          </motion.div>
-        </div>
-      ))}
+              {place === 1 && <span aria-hidden="true" className="card-sweep" />}
+              <span className="relative font-heading text-4xl font-black leading-none">{rank}</span>
+              <CountUp
+                value={row.score}
+                delay={700 + delay * 1000}
+                className="relative mt-1 font-heading text-lg font-extrabold opacity-80"
+              />
+            </motion.div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -121,6 +179,7 @@ export function StandingsTable({
           const move = snap.moves[r.playerId] ?? 0;
           const open = expanded === r.playerId;
           const rank = ranks[idx];
+          const climbed = move > 0;
           return (
             <motion.div
               layout
@@ -131,18 +190,36 @@ export function StandingsTable({
               transition={SPRING}
               className={`row-hover overflow-hidden rounded-2xl bg-surface ${
                 r.winStreak >= 3 ? "streak-row" : ""
-              }`}
+              } ${rank === 1 ? "ring-1 ring-[#f7cf4f]/40" : ""}`}
             >
+              {/* A lime flash sweeps across a row that just climbed. */}
+              <AnimatePresence>
+                {climbed && (
+                  <motion.span
+                    key={`${snap.sig}-flash`}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-transparent via-lime/25 to-transparent"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                )}
+              </AnimatePresence>
               <button
                 onClick={() => setExpanded(open ? null : r.playerId)}
-                className="flex w-full items-center gap-3 px-3 py-3 text-left"
+                className="relative flex w-full items-center gap-3 px-3 py-2.5 text-left"
               >
                 <span
-                  className="w-7 shrink-0 text-center font-heading text-2xl font-black leading-none"
-                  style={{ color: rank <= 3 ? MEDAL[rank - 1] : "var(--color-ink-muted)" }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-lg font-black leading-none"
+                  style={
+                    rank <= 3
+                      ? { background: MEDAL[rank - 1], color: "#0b0d0c" }
+                      : { color: "var(--color-ink-muted)" }
+                  }
                 >
                   {rank}
                 </span>
+                <Avatar name={r.name} size={36} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="truncate text-base font-semibold text-ink">{r.name}</span>
@@ -151,10 +228,10 @@ export function StandingsTable({
                       {move !== 0 && (
                         <motion.span
                           key={`${snap.sig}-${r.playerId}`}
-                          initial={{ scale: 0.3, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
+                          initial={{ scale: 0.3, opacity: 0, y: move > 0 ? 8 : -8 }}
+                          animate={{ scale: 1, opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 14 }}
                           className={`shrink-0 text-xs font-bold ${move > 0 ? "text-lime" : "text-live"}`}
                         >
                           {move > 0 ? `▲${move}` : `▼${-move}`}
@@ -166,15 +243,13 @@ export function StandingsTable({
                     <motion.span
                       className="block h-full rounded-full bg-lime"
                       initial={{ width: 0 }}
-                      animate={{ width: `${(Math.max(r.score, 0) / maxScore) * 100}%` }}
-                      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.05 * idx }}
+                      whileInView={{ width: `${(Math.max(r.score, 0) / maxScore) * 100}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 + 0.04 * idx }}
                     />
                   </span>
                 </span>
-                <RollingNumber
-                  value={r.score}
-                  className="shrink-0 font-heading text-3xl font-black text-ink"
-                />
+                <RollingNumber value={r.score} className="shrink-0 font-heading text-3xl font-black text-ink" />
                 <motion.span
                   animate={{ rotate: open ? 180 : 0 }}
                   transition={SPRING}
