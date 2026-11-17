@@ -86,6 +86,7 @@ export async function GET(req: NextRequest) {
         id: s.id,
         name: s.name,
         date: s.date,
+        venueName: s.venueName,
         sessionType: s.sessionType,
         courts: s.courts,
         communityCode: isAdmin ? (s.community?.code ?? null) : null,

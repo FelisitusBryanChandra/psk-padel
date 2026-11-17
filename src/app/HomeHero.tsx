@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import { HomeWidgets } from "./HomeWidgets";
 import { Logo } from "./Logo";
 import { RollingNumber } from "./RollingNumber";
 import { RiseLine } from "./RiseLine";
@@ -117,6 +118,8 @@ export function HomeHero({
           </div>
         ))}
       </motion.div>
+
+      <HomeWidgets sessions={sessions} />
 
       {sessions.length > 0 && (
         <div

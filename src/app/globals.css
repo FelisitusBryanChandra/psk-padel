@@ -662,6 +662,25 @@
   -webkit-mask: radial-gradient(circle 150px at var(--mx, -999px) var(--my, -999px), #000, transparent);
 }
 
+/* Split-flap tile: flips in on every character change, with the hinge line across the middle. */
+.flap-tile {
+  animation: flap-in 110ms ease-out;
+  transform-origin: 50% 50%;
+}
+.flap-tile::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  background: var(--color-bg);
+}
+@keyframes flap-in {
+  from {
+    transform: rotateX(-80deg);
+    filter: brightness(1.6);
+  }
+}
+
 /* Torn ticket stub: hover peels it a little further (composes with motion's transform). */
 .tt-stub {
   transition:

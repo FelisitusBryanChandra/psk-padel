@@ -14,6 +14,7 @@ export type SessionListItem = {
   id: string;
   name: string;
   date: string;
+  venueName: string | null;
   sessionType: "AMERICANO" | "MEXICANO";
   courts: number;
   communityCode: string | null;
